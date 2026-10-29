@@ -1,0 +1,1 @@
+import{B as e,C as t,D as n,F as r}from"./app-CAShVDsd.js";var i=`/images/ghadams_logo.jpg`,a=`GHADAMS Logo`,o=n({inheritAttrs:!1,__name:`AppLogoIcon`,props:{className:{}},setup(n){return(o,s)=>(e(),t(`img`,r({src:i,alt:a,class:n.className},o.$attrs),null,16))}});export{o as t};

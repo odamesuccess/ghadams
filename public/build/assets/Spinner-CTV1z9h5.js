@@ -1,0 +1,1 @@
+import{B as e,D as t,bt as n,vt as r,x as i}from"./app-CAShVDsd.js";import{a}from"./button-vZSWSvVd.js";import{t as o}from"./loader-circle-DF96h9q_.js";var s=t({__name:`Spinner`,props:{class:{}},setup(t){let s=t;return(t,c)=>(e(),i(r(o),{role:`status`,"aria-label":`Loading`,class:n(r(a)(`size-4 animate-spin`,s.class))},null,8,[`class`]))}});export{s as t};

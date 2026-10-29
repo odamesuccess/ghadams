@@ -1,0 +1,566 @@
+﻿@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@custom-variant dark (&:is(.dark *));
+
+/* =====================================================
+   THEME TOKENS
+===================================================== */
+@theme inline {
+  --font-sans:
+    Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* ðŸŽ¯ SIDEBAR FONT SIZE TOKEN */
+  --sidebar-font-size: 0.875rem; /* 14px default */
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* =====================================================
+   BASE RESET (NO GLOBAL BORDERS)
+===================================================== */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border: 0;
+    outline-color: hsl(var(--ring) / 0.5);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* =====================================================
+   LIGHT MODE
+===================================================== */
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 3.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 3.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 3.9%);
+  --primary: hsl(0 0% 9%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(0 0% 92%);
+  --secondary-foreground: hsl(0 0% 9%);
+  --muted: hsl(0 0% 96%);
+  --muted-foreground: hsl(0 0% 45%);
+  --accent: hsl(0 0% 96%);
+  --accent-foreground: hsl(0 0% 9%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 90%);
+  --input: hsl(0 0% 92%);
+  --ring: hsl(0 0% 10%);
+  --radius: 0.5rem;
+
+  /* Sidebar default (light) */
+  --sidebar-font-size: 0.875rem;
+}
+
+/* =====================================================
+   DARK MODE (ðŸ”¥ PURE BLACK INPUTS)
+===================================================== */
+.dark {
+  --background: hsl(225 35% 6%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(225 30% 8%);
+  --card-foreground: hsl(0 0% 98%);
+  --popover: hsl(225 30% 8%);
+  --popover-foreground: hsl(0 0% 98%);
+  --primary: hsl(0 0% 98%);
+  --primary-foreground: hsl(225 35% 10%);
+  --secondary: hsl(225 25% 12%);
+  --secondary-foreground: hsl(0 0% 98%);
+  --muted: hsl(225 20% 14%);
+  --muted-foreground: hsl(220 10% 65%);
+  --accent: hsl(225 25% 12%);
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  /* ðŸ”¥ HARD OVERRIDES */
+  --input: hsl(0 0% 0%);
+  --border: hsl(225 20% 18%);
+  --ring: hsl(217 91% 60%);
+
+  /* Slightly larger for dark readability */
+  --sidebar-font-size: 0.9375rem; /* 15px */
+}
+
+/* =====================================================
+   COMPONENTS
+===================================================== */
+@layer components {
+
+  /* ===============================
+     SIDEBAR (DYNAMIC FONT SIZE)
+  =============================== */
+  .sidebar {
+    font-size: var(--sidebar-font-size);
+  }
+
+  /* ===============================
+     BUTTONS
+  =============================== */
+  .btn-primary {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600
+           text-white font-medium px-4 py-2 rounded-md
+           shadow-lg shadow-indigo-900/40
+           hover:from-indigo-500 hover:to-purple-500 transition;
+  }
+
+  .btn-secondary {
+    @apply rounded-xl px-4 py-2 text-sm font-semibold
+           bg-gray-700 text-white hover:bg-gray-800 transition;
+  }
+
+  .btn-info {
+    @apply rounded-xl px-4 py-2 text-sm font-semibold
+           bg-blue-600 text-white hover:bg-blue-700 transition;
+  }
+
+  .btn-danger {
+    @apply rounded-xl px-4 py-2 text-sm font-semibold
+           bg-red-600 text-white hover:bg-red-700 transition;
+  }
+
+  /* ===============================
+     ðŸ”¥ GLOBAL BLACK INPUTS
+  =============================== */
+  input,
+  select,
+  textarea {
+    background-color: #000 !important;
+    color: #fff !important;
+    border: 1px solid hsl(225 20% 18%) !important;
+    border-radius: 0.375rem;
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    outline: none;
+  }
+
+  textarea {
+    height: auto;
+    padding: 0.5rem 0.75rem;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"] {
+    background-color: #000 !important;
+    color-scheme: dark;
+  }
+
+  input[type="file"] {
+    background-color: #000 !important;
+  }
+
+  input::file-selector-button {
+    background-color: #1e293b !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 0.25rem 0.75rem;
+    margin-right: 0.75rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+  }
+
+  input::file-selector-button:hover {
+    background-color: #334155 !important;
+  }
+}
+
+
+/* =========================================================
+   GHANADAMS UNIFORM APPLICATION THEME â€” 2026-09
+   Applied centrally through .ghadams-app-content.
+========================================================= */
+.ghadams-app-content {
+  --gh-bg: #080b12;
+  --gh-panel: #080d1e;
+  --gh-panel-soft: #0d1428;
+  --gh-panel-hover: #111b33;
+  --gh-border: #243149;
+  --gh-text: #f8fafc;
+  --gh-muted: #8ea0bd;
+  --gh-primary: #3765f5;
+  --gh-primary-hover: #4f75f7;
+  --gh-success: #5ee0ad;
+  --gh-warning: #f6c344;
+  --gh-danger: #fb7185;
+  min-height: 100vh;
+  background: var(--gh-bg);
+  color: var(--gh-text);
+}
+
+
+/* Normalize common legacy GhanaDAMS slate panels without moving components. */
+.ghadams-app-content .border-slate-600,
+.ghadams-app-content .border-slate-700,
+.ghadams-app-content .border-slate-800,
+.ghadams-app-content .border-gray-700,
+.ghadams-app-content .border-gray-800 {
+  border-color: var(--gh-border) !important;
+}
+
+.ghadams-app-content .bg-slate-950,
+.ghadams-app-content .bg-slate-950\/50,
+.ghadams-app-content .bg-slate-950\/60,
+.ghadams-app-content .bg-gray-950 {
+  background-color: var(--gh-panel) !important;
+}
+
+.ghadams-app-content .bg-slate-900,
+.ghadams-app-content .bg-slate-900\/80,
+.ghadams-app-content .bg-gray-900 {
+  background-color: var(--gh-panel-soft) !important;
+}
+
+.ghadams-app-content .bg-slate-800,
+.ghadams-app-content .bg-gray-800 {
+  background-color: #111a2d !important;
+}
+
+.ghadams-app-content input,
+.ghadams-app-content select,
+.ghadams-app-content textarea {
+  border: 1px solid var(--gh-border) !important;
+  border-radius: .55rem !important;
+  background: #000 !important;
+  color: #fff !important;
+}
+
+.ghadams-app-content input:focus,
+.ghadams-app-content select:focus,
+.ghadams-app-content textarea:focus {
+  border-color: #4f75f7 !important;
+  box-shadow: 0 0 0 2px rgba(55,101,245,.18);
+}
+
+.ghadams-app-content table thead {
+  background: #111a2d;
+}
+
+.ghadams-app-content table tbody tr {
+  border-color: var(--gh-border);
+}
+
+.ghadams-app-content table tbody tr:hover {
+  background: rgba(17,27,51,.72);
+}
+
+.gh-page {
+  width: 100%;
+  padding: 14px;
+}
+
+.gh-page > * + * {
+  margin-top: 12px;
+}
+
+.gh-page-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:16px 18px;
+  border:1px solid var(--gh-border);
+  border-radius:14px;
+  background:var(--gh-panel);
+}
+
+.gh-page-header h1 {
+  margin:2px 0 0;
+  font-size:1.25rem;
+  line-height:1.25;
+  font-weight:800;
+}
+
+.gh-page-header p:not(.gh-kicker) {
+  margin-top:4px;
+  color:var(--gh-muted);
+  font-size:.78rem;
+}
+
+.gh-kicker {
+  margin:0;
+  color:#67e8b7;
+  font-size:.64rem;
+  font-weight:800;
+  letter-spacing:.17em;
+  text-transform:uppercase;
+}
+
+.gh-filter-bar {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  border:1px solid var(--gh-border);
+  border-radius:12px;
+  background:var(--gh-panel-soft);
+}
+
+.gh-field {
+  height:36px !important;
+  min-width:120px;
+  padding:0 10px !important;
+  font-size:.75rem !important;
+}
+
+.gh-btn {
+  display:inline-flex;
+  height:36px;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border-radius:8px;
+  padding:0 14px;
+  font-size:.75rem;
+  font-weight:700;
+  text-decoration:none;
+  transition:.15s ease;
+}
+.gh-btn:disabled { opacity:.45; cursor:not-allowed; }
+.gh-btn-primary { background:var(--gh-primary); color:#fff; }
+.gh-btn-primary:hover { background:var(--gh-primary-hover); }
+.gh-btn-secondary { border:1px solid var(--gh-border); background:#050811; color:#e5e7eb; }
+.gh-btn-secondary:hover { background:#151d30; }
+
+.gh-period-line,
+.gh-note {
+  padding:8px 12px;
+  border:1px solid var(--gh-border);
+  border-radius:10px;
+  background:#0a1020;
+  color:var(--gh-muted);
+  font-size:.72rem;
+}
+.gh-note { line-height:1.55; }
+.gh-separator { margin:0 8px; color:#475569; }
+
+.gh-summary-grid {
+  display:grid;
+  gap:10px;
+}
+.gh-summary-grid-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.gh-summary-grid-5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.gh-summary-grid-6 { grid-template-columns:repeat(6,minmax(0,1fr)); }
+
+.gh-summary-card {
+  min-width:0;
+  padding:12px 13px;
+  border:1px solid var(--gh-border);
+  border-radius:12px;
+  background:var(--gh-panel-soft);
+}
+.gh-summary-card span {
+  display:block;
+  color:#8194b7;
+  font-size:.62rem;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.gh-summary-card strong {
+  display:block;
+  margin-top:5px;
+  overflow:hidden;
+  color:#fff;
+  font-size:1.08rem;
+  font-weight:800;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.gh-summary-card small {
+  display:block;
+  margin-top:3px;
+  color:var(--gh-muted);
+  font-size:.65rem;
+}
+
+.gh-panel {
+  overflow:hidden;
+  border:1px solid var(--gh-border);
+  border-radius:13px;
+  background:var(--gh-panel);
+}
+.gh-panel-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 14px;
+  border-bottom:1px solid var(--gh-border);
+}
+.gh-panel-heading h2 { margin:0; font-size:.9rem; font-weight:800; }
+.gh-panel-heading p { margin:3px 0 0; color:var(--gh-muted); font-size:.68rem; }
+
+.gh-table-wrap { width:100%; overflow-x:auto; }
+.gh-table { width:100%; min-width:900px; border-collapse:collapse; font-size:.72rem; }
+.gh-table th {
+  padding:9px 11px;
+  border-bottom:1px solid var(--gh-border);
+  color:#8da3c7;
+  font-size:.63rem;
+  font-weight:800;
+  text-align:left;
+  text-transform:uppercase;
+}
+.gh-table td {
+  padding:9px 11px;
+  border-bottom:1px solid #1b2740;
+  color:#e8eefb;
+  vertical-align:middle;
+}
+.gh-table td small {
+  display:block;
+  margin-top:2px;
+  color:var(--gh-muted);
+  font-size:.62rem;
+}
+.gh-empty { padding:28px !important; color:var(--gh-muted) !important; text-align:center; }
+
+.gh-badge {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--gh-border);
+  border-radius:999px;
+  padding:3px 8px;
+  background:#111827;
+  color:#cbd5e1;
+  font-size:.62rem;
+  font-weight:800;
+  text-transform:capitalize;
+  white-space:nowrap;
+}
+.gh-badge-success { border-color:rgba(52,211,153,.22); background:rgba(16,185,129,.10); color:#6ee7b7; }
+.gh-badge-warning { border-color:rgba(251,191,36,.22); background:rgba(245,158,11,.10); color:#fbbf24; }
+.gh-badge-danger { border-color:rgba(251,113,133,.22); background:rgba(244,63,94,.10); color:#fda4af; }
+.gh-badge-blue, .gh-badge-info { border-color:rgba(96,165,250,.22); background:rgba(59,130,246,.10); color:#93c5fd; }
+.gh-badge-muted { color:#94a3b8; }
+
+.gh-pagination {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 12px;
+  color:var(--gh-muted);
+  font-size:.68rem;
+}
+.gh-pagination > div { display:flex; align-items:center; gap:7px; }
+.gh-page-number {
+  min-width:58px;
+  padding:7px 8px;
+  border:1px solid var(--gh-border);
+  border-radius:8px;
+  background:#0b1222;
+  color:#e5e7eb;
+  text-align:center;
+}
+
+.gh-trend-row {
+  display:grid;
+  grid-template-columns:170px 1fr 125px;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+}
+.gh-trend-label { font-size:.7rem; font-weight:700; }
+.gh-trend-label span { display:block; color:var(--gh-muted); font-size:.61rem; font-weight:500; }
+.gh-trend-track { height:7px; overflow:hidden; border-radius:999px; background:#1b2740; }
+.gh-trend-fill { height:100%; border-radius:999px; background:#4f75f7; }
+.gh-trend-fill-green { background:#43d6a0; }
+.gh-trend-row > strong { font-size:.7rem; text-align:right; }
+
+@media (max-width:1200px) {
+  .gh-summary-grid-6 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .gh-summary-grid-5 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:820px) {
+  .gh-page { padding:10px; }
+  .gh-page-header { align-items:flex-start; }
+  .gh-summary-grid-4,.gh-summary-grid-5,.gh-summary-grid-6 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .gh-trend-row { grid-template-columns:115px 1fr 95px; }
+}
+@media (max-width:560px) {
+  .gh-page { padding:8px; }
+  .gh-page-header { flex-direction:column; padding:13px; }
+  .gh-page-header .gh-btn { width:100%; }
+  .gh-filter-bar { padding:8px; }
+  .gh-filter-bar > * { width:100%; min-width:100% !important; }
+  .gh-summary-grid-4,.gh-summary-grid-5,.gh-summary-grid-6 { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+  .gh-summary-card { padding:10px; }
+  .gh-summary-card strong { font-size:.95rem; }
+  .gh-panel-heading { align-items:flex-start; flex-direction:column; }
+  .gh-panel-heading .gh-field { width:100%; }
+  .gh-trend-row { grid-template-columns:1fr; gap:5px; }
+  .gh-trend-row > strong { text-align:left; }
+  .gh-pagination { align-items:flex-start; flex-direction:column; }
+  .gh-pagination > div { width:100%; justify-content:space-between; }
+}
+
+/* GHANADAMS_HIDE_MAIN_PAGE_SCROLLBAR_START */
+/*
+   Hide ONLY the browser/page scrollbar.
+   Scrolling itself remains enabled with:
+   - mouse wheel
+   - touchpad
+   - keyboard
+   - touch
+
+   Internal table scroll areas are not disabled.
+*/
+html,
+body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+/* GHANADAMS_HIDE_MAIN_PAGE_SCROLLBAR_END */
+

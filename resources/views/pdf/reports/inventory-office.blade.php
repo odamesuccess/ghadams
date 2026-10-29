@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Inventory by Location</title>
+
+<style>
+
+@page {
+    margin: 0;
+}
+
+body{
+    font-family: DejaVu Sans, sans-serif;
+    font-size:11px;
+    margin:0;
+    padding:60px 40px 175px 40px;
+    color:#222;
+    position:relative;
+    min-height:100%;
+}
+
+
+/* =========================================================
+HEADER
+========================================================= */
+
+.header-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-bottom:5px;
+}
+
+.header-table td{
+    border:none;
+    padding:0;
+    font-size:11px;
+}
+
+.date-cell{
+    text-align:right;
+}
+
+.header-title{
+    text-align:center;
+    font-size:18px;
+    font-weight:bold;
+    margin-bottom:5px;
+    letter-spacing:0.5px;
+}
+
+.report-title{
+    text-align:center;
+    font-size:15px;
+    font-weight:bold;
+    margin-top:5px;
+    margin-bottom:18px;
+}
+
+
+/* =========================================================
+ASSET TABLE
+========================================================= */
+
+.asset-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.asset-table th,
+.asset-table td{
+    border:1px solid #444;
+    padding:5px 6px;
+    font-size:10.5px;
+}
+
+.asset-table th{
+    background:#f2f2f2;
+    font-weight:bold;
+    text-align:left;
+}
+
+.asset-table thead{
+    display:table-header-group;
+}
+
+.asset-table tbody tr:nth-child(even){
+    background:#fafafa;
+}
+
+.asset-table tr{
+    page-break-inside:avoid;
+}
+
+
+/* =========================================================
+BOTTOM SIGNATURE / APPROVAL AREA - V4 FINAL
+========================================================= */
+
+.bottom-approval{
+    position:absolute;
+    left:40px;
+    right:40px;
+    bottom:58px;
+    page-break-inside:avoid;
+}
+
+.signature-section{
+    width:100%;
+    border-collapse:collapse;
+    margin:0 0 22px 0;
+}
+
+.signature-section td{
+    width:33.33%;
+    border:none !important;
+    padding:0 18px !important;
+    text-align:center;
+    vertical-align:top;
+    background:transparent !important;
+}
+
+.signature-title{
+    font-size:13px;
+    font-weight:normal;
+    line-height:1.35;
+    white-space:nowrap;
+    margin:0 0 34px 0;
+}
+
+/* Shorter dotted signature lines */
+.signature-line{
+    width:62%;
+    margin:0 auto;
+    border-top:1.5px dotted #555;
+    height:1px;
+}
+
+
+/* =========================================================
+FOOTER
+========================================================= */
+
+.footer{
+    width:100%;
+    border-collapse:collapse;
+    margin:0;
+}
+
+.footer td{
+    border:none !important;
+    padding:0 2px !important;
+    background:transparent !important;
+    font-size:8.5px;
+}
+
+.footer-left{
+    text-align:left;
+}
+
+.footer-right{
+    text-align:right;
+}
+
+</style>
+</head>
+
+<body>
+
+<table class="header-table">
+<tr>
+<td></td>
+<td class="date-cell">
+<strong>Date:</strong>
+{{ $generatedAt->format('d M Y') }}
+</td>
+</tr>
+</table>
+
+<div class="header-title">
+GHANA EDUCATION SERVICE – HEADQUARTERS
+</div>
+
+<div class="report-title">
+ASSET INVENTORY REPORT
+@if(!empty($locationname))
+    – {{ strtoupper($locationname) }}
+@else
+    – ALL LOCATIONS
+@endif
+</div>
+
+
+<table class="asset-table">
+
+<thead>
+<tr>
+<th width="40">#</th>
+<th width="120">Asset Code</th>
+<th>Asset Name</th>
+<th>Unit / Division</th>
+<th>Location</th>
+<th width="140">Warranty End Date</th>
+</tr>
+</thead>
+
+<tbody>
+
+@forelse($assets as $index => $asset)
+
+<tr>
+<td>{{ $index + 1 }}</td>
+<td>{{ $asset->asset_code }}</td>
+<td>{{ $asset->assetName->assetname ?? '—' }}</td>
+<td>{{ $asset->unit->name ?? '—' }}</td>
+<td>{{ $asset->unit->locationname ?? '—' }}</td>
+<td>
+{{ $asset->warranty_end_date
+    ? \Carbon\Carbon::parse($asset->warranty_end_date)->format('d M Y')
+    : '—'
+}}
+</td>
+</tr>
+
+@empty
+
+<tr>
+<td colspan="6" align="center">
+No records found
+</td>
+</tr>
+
+@endforelse
+
+</tbody>
+
+</table>
+
+
+<!-- ======================================================
+EXTREME-BOTTOM SIGNATURE + FOOTER AREA
+======================================================= -->
+<div class="bottom-approval">
+
+    <table class="signature-section">
+    <tr>
+
+    <td>
+        <div class="signature-title">
+            Office Head of Estate Unit
+        </div>
+        <div class="signature-line"></div>
+    </td>
+
+    <td>
+        <div class="signature-title">
+            Head of Internal Unit
+        </div>
+        <div class="signature-line"></div>
+    </td>
+
+    <td>
+        <div class="signature-title">
+            Officer in charge at Division/Unit
+        </div>
+        <div class="signature-line"></div>
+    </td>
+
+    </tr>
+    </table>
+
+    <table class="footer">
+    <tr>
+    <td class="footer-left">
+        Generated on: {{ $generatedAt->format('d M Y H:i') }}
+    </td>
+
+    <td class="footer-right">
+        Generated by {{ $currentuser }}
+    </td>
+    </tr>
+    </table>
+
+</div>
+
+</body>
+</html>

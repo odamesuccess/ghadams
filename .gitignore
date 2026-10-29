@@ -1,0 +1,67 @@
+/.phpunit.cache
+/bootstrap/ssr
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+/vendor
+.DS_Store
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+
+# Local databases and database exports
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.sql.gz
+*.dump
+
+# Backups and patch packages
+*.zip
+*.bak
+*.tar
+*.tar.gz
+/_patch_backups/
+/PATCH_FILES/
+
+# Private certificates and secrets
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+.env.*
+
+# Runtime files and user uploads
+/storage/app/
+/storage/logs/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+/storage/framework/testing/
+/public/uploads/
+/public/files/
+
+# Additional generated files and patch backups
+/storage/patch-backups/
+/storage/patch_backups/
+/storage/framework/lsp-*

@@ -1,0 +1,1 @@
+<h2>GhanaDAMS: {{ $report['title'] }}</h2><p>Period: {{ $report['period'] }}</p>@foreach($report['summary'] as $label=>$value)<p><strong>{{ $label }}:</strong> {{ $value }}</p>@endforeach<p>{{ $report['note'] }}</p><p>The detailed PDF report is attached. You received this report because an administrator selected one of your assigned roles.</p>
