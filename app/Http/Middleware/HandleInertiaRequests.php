@@ -3,7 +3,10 @@
 namespace App\Http\Middleware;
 
 use App\Models\SystemNotification;
+use App\Services\DemoData\SyntheticDatasetWriter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -83,6 +86,11 @@ class HandleInertiaRequests extends Middleware
             ],
 
             /* ===========================
+               SYNTHETIC DEMO DATA INDICATOR (admins only)
+            ============================ */
+            'demoDataset' => fn () => $this->demoDataset($user),
+
+            /* ===========================
                FLASH MESSAGES
             ============================ */
             'flash' => [
@@ -98,5 +106,25 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state')
                 || $request->cookie('sidebar_state') === 'true',
         ]);
+    }
+
+    /**
+     * Tells administrators that the register contains synthetic demo rows.
+     */
+    private function demoDataset($user): ?array
+    {
+        if (! $user || ! $user->hasAnyRole(['Admin', 'Super Admin'])
+            || ! Schema::hasTable(SyntheticDatasetWriter::REGISTRY)) {
+            return null;
+        }
+
+        $assets = DB::table(SyntheticDatasetWriter::REGISTRY)
+            ->where('dataset', config('demo_dataset.dataset'))
+            ->where('record_type', 'asset')
+            ->count();
+
+        return $assets > 0
+            ? ['label' => config('demo_dataset.label'), 'assets' => $assets]
+            : null;
     }
 }
