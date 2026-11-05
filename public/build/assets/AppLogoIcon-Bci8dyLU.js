@@ -1,1 +1,0 @@
-import{I as e,O as t,V as n,w as r}from"./app-ORybitP4.js";var i=`/images/ghadams_logo.jpg`,a=`GHADAMS Logo`,o=t({inheritAttrs:!1,__name:`AppLogoIcon`,props:{className:{}},setup(t){return(o,s)=>(n(),r(`img`,e({src:i,alt:a,class:t.className},o.$attrs),null,16))}});export{o as t};

@@ -1,1 +1,0 @@
-import{n as e}from"./loader-circle-peZxJGTz.js";var t=e(`CheckIcon`,[[`path`,{d:`M20 6 9 17l-5-5`,key:`1gmf2c`}]]);export{t};
