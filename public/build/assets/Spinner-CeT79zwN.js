@@ -1,0 +1,1 @@
+import{O as e,S as t,V as n,xt as r,yt as i}from"./app-ORybitP4.js";import{a}from"./button-BFc8bAdM.js";import{t as o}from"./loader-circle-peZxJGTz.js";var s=e({__name:`Spinner`,props:{class:{}},setup(e){let s=e;return(e,c)=>(n(),t(i(o),{role:`status`,"aria-label":`Loading`,class:r(i(a)(`size-4 animate-spin`,s.class))},null,8,[`class`]))}});export{s as t};
