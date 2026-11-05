@@ -12,6 +12,7 @@ import {
     LayoutGrid,
     Boxes,
     QrCode,
+    Sparkles,
     Users,
     Shield,
     Key,
@@ -69,6 +70,7 @@ import maintenanceproviders from '@/routes/maintenanceproviders'
 import assetnames from '@/routes/assetnames'
 import assets from '@/routes/assets'
 import assetQrcodes from '@/routes/assetqrcodes'
+import assetResearch from '@/routes/asset-research'
 import applinkqrs from '@/routes/links'
 import sources from '@/routes/sources'
 import depreciationreports from '@/routes/depreciationreports'
@@ -366,6 +368,15 @@ if (hasMenuAccess('assets.menu')) {
         title: 'Asset Management',
         href: assets.index(),
         icon: Boxes,
+    })
+}
+
+/* AI research: shown to anyone with the AI permissions, even without asset access */
+if (isSuperAdmin.value || hasPermission('assets.research') || hasPermission('assets.review-suggestions')) {
+    mainNavItems.push({
+        title: 'AI Research',
+        href: assetResearch.index(),
+        icon: Sparkles,
     })
 }
 

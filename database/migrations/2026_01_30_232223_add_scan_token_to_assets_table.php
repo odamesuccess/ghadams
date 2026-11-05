@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // The assets table migration already creates this column on fresh installs.
+        if (Schema::hasColumn('assets', 'scan_token')) {
+            return;
+        }
+
         Schema::table('assets', function (Blueprint $table) {
             // Step 1: allow null (temporary)
             $table->uuid('scan_token')

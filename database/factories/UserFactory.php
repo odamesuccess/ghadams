@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -24,6 +25,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'unit_id' => fn () => static::defaultUnitId(),
+            'user_status' => 'Active',
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -33,6 +36,39 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    /**
+     * Every user must belong to a unit. Reuse one if it exists, otherwise create a
+     * minimal organization and unit (plain inserts, so model observers don't run).
+     */
+    protected static function defaultUnitId(): int
+    {
+        $existing = DB::table('units')->value('id');
+
+        if ($existing) {
+            return (int) $existing;
+        }
+
+        $organizationId = DB::table('organizations')->insertGetId([
+            'organizations_name' => 'Test Organization',
+            'organization_abbreviation' => 'TST',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return (int) DB::table('units')->insertGetId([
+            'name' => 'Test Unit',
+            'unit_abbreviation' => 'TU',
+            'email' => 'unit@example.com',
+            'phonenumber' => '0000000000',
+            'locationname' => 'Head Office',
+            'location_abbreviation' => 'HO',
+            'officenumber' => '1',
+            'organization_id' => $organizationId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /**

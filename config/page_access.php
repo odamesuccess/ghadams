@@ -13,6 +13,7 @@ return [
     'suppliers.index' => ['label' => 'Suppliers', 'permissions' => ['suppliers.menu', 'suppliers.view', 'view.suppliers']],
     'maintenanceproviders.index' => ['label' => 'Maintenance Providers', 'permissions' => ['maintenance-providers.menu', 'maintenanceproviders.view', 'view.maintenanceproviders']],
     'assets.index' => ['label' => 'Asset Management', 'permissions' => ['assets.menu', 'assets.view', 'view.assets']],
+    'asset-research.index' => ['label' => 'AI Research', 'permissions' => ['assets.research', 'assets.review-suggestions']],
     'assetqrcodes.index' => ['label' => 'Asset QR Codes', 'permissions' => ['asset-qrcodes.menu', 'asset-qrcodes.view']],
     'asset-requests.my-requests' => ['label' => 'Asset Requests', 'permissions' => ['asset-requests.menu', 'asset-requests.view']],
     'asset-requests.index' => ['label' => 'Asset Request Approval', 'permissions' => ['asset-request-approval.menu', 'asset-request-approval.view']],

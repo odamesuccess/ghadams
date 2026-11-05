@@ -91,6 +91,8 @@ const form = useForm({
 
     serial_number: 'N/A',      // ✅ default
     description: 'N/A',        // ✅ default
+    model_number: '',
+    part_number: '',
 
     purchase_cost: '',
     purchase_date: today,      // ✅ today default
@@ -189,6 +191,26 @@ const submit = () => {
                     <div>
                         <Label>Useful Life (Years)</Label>
                         <Input v-model="form.usefullife" readonly class="bg-slate-800" />
+                    </div>
+                </div>
+
+                <!-- MODEL / PART NUMBER (used by AI auto-fill) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <Label>Model Number</Label>
+                        <Input v-model="form.model_number" placeholder="e.g. EliteBook 840 G8" />
+                    </div>
+
+                    <div>
+                        <Label>Part Number</Label>
+                        <Input v-model="form.part_number" placeholder="e.g. 3G2A3EA" />
+                    </div>
+
+                    <div class="flex items-end">
+                        <p class="text-xs text-slate-400">
+                            Save the asset first, then use <span class="font-medium text-indigo-300">Auto-fill with AI</span>
+                            on the edit or detail page to look up specs and price.
+                        </p>
                     </div>
                 </div>
 

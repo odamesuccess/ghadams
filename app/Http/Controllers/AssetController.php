@@ -128,6 +128,8 @@ class AssetController extends Controller
             'warranty_end_date' => ['nullable', 'date'],
             'description' => ['nullable', 'string'],
             'serial_number' => ['nullable', 'string'],
+            'model_number' => ['nullable', 'string', 'max:255'],
+            'part_number' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,under_maintenance,obsolete,disposed'],
             'asset_image' => ['nullable', 'image', 'max:2048'],
         ]);
@@ -258,6 +260,8 @@ class AssetController extends Controller
             'warranty_end_date' => ['nullable', 'date'],
             'description' => ['nullable', 'string'],
             'serial_number' => ['nullable', 'string'],
+            'model_number' => ['nullable', 'string', 'max:255'],
+            'part_number' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:active,under_maintenance,obsolete,disposed'],
             'asset_image' => ['nullable', 'image', 'max:2048'],
         ]);

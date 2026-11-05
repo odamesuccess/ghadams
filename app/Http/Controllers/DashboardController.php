@@ -286,6 +286,20 @@ class DashboardController extends Controller
             /* ALERTS / SECURITY / WORKFLOW */
             'expiringSoon' => (int) $expiringSoon,
             'securityStats' => $securityStats,
+
+            /* AI RESEARCH (null when the user has no AI permission) */
+            'aiResearchPending' => $this->aiResearchPending(),
         ]);
+    }
+
+    private function aiResearchPending(): ?int
+    {
+        $user = auth()->user();
+
+        if (! $user || (! $user->can('assets.research') && ! $user->can('assets.review-suggestions'))) {
+            return null;
+        }
+
+        return AssetResearchController::pendingReviewCount($user);
     }
 }

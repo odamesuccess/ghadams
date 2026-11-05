@@ -15,6 +15,8 @@ use App\Http\Controllers\AssetQrCodeController;
 use App\Http\Controllers\AssetQrBulkDownloadController;
 use App\Http\Controllers\AssetRequestController;
 use App\Http\Controllers\AssetScanController;
+use App\Http\Controllers\AssetResearchController;
+use App\Http\Controllers\AssetSuggestionController;
 use App\Http\Controllers\AssetTransferController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\DashboardController;
@@ -200,6 +202,38 @@ Route::middleware(['auth', 'force.password.change', 'account.active'])->group(fu
     crudRoutes('suppliers', SupplierController::class, 'suppliers', 'suppliers', 'supplier');
     crudRoutes('maintenanceproviders', MaintenanceProviderController::class, 'maintenanceproviders', 'maintenanceproviders', 'maintenanceprovider');
     crudRoutes('assets', AssetController::class, 'assets', 'assets', 'asset');
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI ASSET RESEARCH (JSON)
+    |--------------------------------------------------------------------------
+    | The AI only creates suggestions. Assets change only on approve.
+    | Unit scoping is enforced by AssetSuggestionPolicy.
+    */
+
+    Route::get('/asset-research', [AssetResearchController::class, 'index'])
+        ->middleware('permission:assets.research|assets.review-suggestions')
+        ->name('asset-research.index');
+
+    Route::patch('/asset-research/{asset}/identifiers', [AssetResearchController::class, 'updateIdentifiers'])
+        ->middleware('permission:assets.research')
+        ->name('asset-research.identifiers');
+
+    Route::post('/assets/{asset}/research', [AssetSuggestionController::class, 'research'])
+        ->middleware(['permission:assets.research', 'throttle:asset-research'])
+        ->name('assets.research');
+
+    Route::get('/assets/{asset}/suggestions', [AssetSuggestionController::class, 'index'])
+        ->middleware('permission:assets.research|assets.review-suggestions')
+        ->name('assets.suggestions.index');
+
+    Route::post('/suggestions/{suggestion}/approve', [AssetSuggestionController::class, 'approve'])
+        ->middleware('permission:assets.review-suggestions')
+        ->name('suggestions.approve');
+
+    Route::post('/suggestions/{suggestion}/reject', [AssetSuggestionController::class, 'reject'])
+        ->middleware('permission:assets.review-suggestions')
+        ->name('suggestions.reject');
 
     /*
     |--------------------------------------------------------------------------

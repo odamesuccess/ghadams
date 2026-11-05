@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import DarkSelect from '@/components/ui/DarkSelect.vue'
+import AiResearchPanel from '@/components/assets/AiResearchPanel.vue'
+import type { CurrentValues } from '@/composables/useAssetResearch'
+import { can } from '@/utils/permissions'
 import { toast } from '@/utils/sweetalert'
 
 /* ======================= Types ======================= */
@@ -22,6 +25,8 @@ interface Asset {
   usefullife: number
   unit_id: number
   serial_number?: string
+  model_number?: string | null
+  part_number?: string | null
   description?: string
   purchase_cost?: number
   purchase_date?: string
@@ -76,6 +81,8 @@ const form = useForm({
   usefullife: props.asset.usefullife,
   unit_id: props.asset.unit_id,
   serial_number: props.asset.serial_number ?? '',
+  model_number: props.asset.model_number ?? '',
+  part_number: props.asset.part_number ?? '',
   description: props.asset.description ?? '',
   purchase_cost: props.asset.purchase_cost ?? '',
   purchase_date: toDateInput(props.asset.purchase_date),
@@ -119,6 +126,16 @@ watch(
 const selectedUnit = computed(() =>
   props.units.find(u => u.id === Number(form.unit_id))
 )
+
+/* ======================= AI Research ======================= */
+const canUseAi = can('assets.research') || can('assets.review-suggestions')
+
+// Keep the form in step with an approved suggestion so saving the form doesn't undo it.
+const onAiApplied = (current: CurrentValues) => {
+  if (!form.model_number && current.model_number) {
+    form.model_number = current.model_number
+  }
+}
 
 /* ======================= Submit ======================= */
 const submit = () => {
@@ -167,6 +184,19 @@ const submit = () => {
           <div>
             <Label>Useful Life (Years)</Label>
             <Input v-model="form.usefullife" readonly />
+          </div>
+        </div>
+
+        <!-- MODEL / PART NUMBER (used by AI auto-fill) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <Label>Model Number</Label>
+            <Input v-model="form.model_number" placeholder="e.g. EliteBook 840 G8" />
+          </div>
+
+          <div>
+            <Label>Part Number</Label>
+            <Input v-model="form.part_number" placeholder="e.g. 3G2A3EA" />
           </div>
         </div>
 
@@ -270,5 +300,12 @@ const submit = () => {
 
       </form>
     </FormCard>
+
+    <AiResearchPanel
+      v-if="canUseAi"
+      class="mx-6 mt-4 mb-6"
+      :asset-id="props.asset.id"
+      @applied="onAiApplied"
+    />
   </AppLayout>
 </template>

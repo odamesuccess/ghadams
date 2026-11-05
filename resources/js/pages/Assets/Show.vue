@@ -2,17 +2,47 @@
 /* =======================
    Imports
 ======================= */
-import { Head, Link } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import AppLayout from '@/layouts/AppLayout.vue'
+import AiResearchPanel from '@/components/assets/AiResearchPanel.vue'
 import type { BreadcrumbItem } from '@/types'
 import { index, edit } from '@/routes/assets'
+import { can } from '@/utils/permissions'
 
 /* =======================
    Props
 ======================= */
-defineProps<{
+const props = defineProps<{
     asset: any
 }>()
+
+/* =======================
+   AI research / specs / market price
+======================= */
+const canUseAi = can('assets.research') || can('assets.review-suggestions')
+
+const specEntries = computed(() =>
+    Object.entries((props.asset.specifications ?? {}) as Record<string, unknown>)
+        .filter(([, value]) => value !== null && value !== '' && !(Array.isArray(value) && !value.length)),
+)
+
+const formatSpec = (value: unknown) =>
+    Array.isArray(value) ? value.join(', ') : typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)
+
+const formatMoney = (value: unknown) =>
+    Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+const marketPrice = computed(() => {
+    const a = props.asset
+    if (a.market_price_amount != null) return `${a.market_price_currency ?? ''} ${formatMoney(a.market_price_amount)}`.trim()
+    if (a.market_price_low != null) {
+        return `${a.market_price_currency ?? ''} ${formatMoney(a.market_price_low)} – ${formatMoney(a.market_price_high)}`.trim()
+    }
+    return null
+})
+
+const reloadAsset = () => router.reload({ only: ['asset'] })
 
 
 const formatDate = (value: string | null) => {
@@ -117,6 +147,24 @@ const breadcrumbs: BreadcrumbItem[] = [
                         </div>
 
                         <div class="space-y-1 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Model / Part Number</p>
+                            <p class="text-sm font-medium text-white">
+                                {{ asset.model_number || '—' }}<span v-if="asset.part_number" class="text-slate-400"> · {{ asset.part_number }}</span>
+                            </p>
+                        </div>
+
+                        <div class="space-y-1 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Market Price</p>
+                            <p class="text-sm font-medium text-white">
+                                {{ marketPrice ?? '—' }}
+                                <span v-if="asset.market_price_type" class="text-xs capitalize text-slate-400">({{ asset.market_price_type }})</span>
+                            </p>
+                            <p v-if="asset.market_price_retrieved_at" class="text-xs text-slate-500">
+                                as of {{ formatDate(asset.market_price_retrieved_at) }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-1 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Purchase Cost</p>
                             <p class="text-sm font-medium text-white">{{ asset.purchase_cost ?? '—' }}</p>
                         </div>
@@ -185,9 +233,22 @@ const breadcrumbs: BreadcrumbItem[] = [
                             <p class="text-sm font-medium text-white">{{ asset.user?.name ?? '—' }}</p>
                         </div>
 
+                        <!-- Specifications (from approved AI suggestions) -->
+                        <div v-if="specEntries.length" class="rounded-xl border border-slate-800 bg-slate-900/40 p-4 md:col-span-2">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Specifications</p>
+                            <dl class="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                                <div v-for="[key, value] in specEntries" :key="key" class="flex justify-between gap-3 border-b border-slate-800/70 pb-1">
+                                    <dt class="capitalize text-slate-400">{{ key.replaceAll('_', ' ') }}</dt>
+                                    <dd class="text-right text-white">{{ formatSpec(value) }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+
                     </div>
                 </div>
             </div>
+
+            <AiResearchPanel v-if="canUseAi" class="mt-8" :asset-id="asset.id" @applied="reloadAsset" />
 
             <div class="mt-8 grid gap-4 lg:grid-cols-3">
                 <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-4 lg:col-span-1">

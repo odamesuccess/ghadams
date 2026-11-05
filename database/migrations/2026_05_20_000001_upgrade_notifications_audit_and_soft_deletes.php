@@ -73,7 +73,12 @@ return new class extends Migration
     {
         $database = DB::getDatabaseName();
 
-        $tables = collect(DB::select('SHOW TABLES'))
+        // SQLite (test suite) has no SHOW TABLES; MySQL keeps the original query.
+        $rows = DB::getDriverName() === 'sqlite'
+            ? array_map(fn ($name) => (object) ['Tables_in_'.$database => $name], Schema::getTableListing(schemaQualified: false))
+            : DB::select('SHOW TABLES');
+
+        $tables = collect($rows)
             ->map(function ($row) use ($database) {
                 $property = 'Tables_in_'.$database;
                 return $row->{$property} ?? array_values((array) $row)[0] ?? null;

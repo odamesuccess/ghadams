@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // The assets table migration already creates this column on fresh installs.
+        if (Schema::hasColumn('assets', 'qr_code')) {
+            return;
+        }
+
         Schema::table('assets', function (Blueprint $table) {
             $table->string('qr_code')->nullable()->after('asset_code');
         });

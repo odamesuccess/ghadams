@@ -16,6 +16,15 @@ class Asset extends Model
         'asset_code',
         'assetname_id',
         'brand',
+        'model_number',
+        'part_number',
+        'specifications',
+        'market_price_amount',
+        'market_price_low',
+        'market_price_high',
+        'market_price_currency',
+        'market_price_type',
+        'market_price_retrieved_at',
         'source_id',
         'supplier_id',
         'maintenance_id',
@@ -37,6 +46,11 @@ class Asset extends Model
         'purchase_date' => 'date:Y-m-d',
         'warranty_end_date' => 'date:Y-m-d',
         'purchase_cost' => 'decimal:2',
+        'specifications' => 'array',
+        'market_price_amount' => 'decimal:2',
+        'market_price_low' => 'decimal:2',
+        'market_price_high' => 'decimal:2',
+        'market_price_retrieved_at' => 'datetime',
     ];
 
     protected static function booted()
@@ -113,6 +127,16 @@ class Asset extends Model
     public function scanLogs()
     {
         return $this->hasMany(AssetScanLog::class);
+    }
+
+    public function suggestions()
+    {
+        return $this->hasMany(AssetSuggestion::class);
+    }
+
+    public function latestSuggestion()
+    {
+        return $this->hasOne(AssetSuggestion::class)->latestOfMany();
     }
 }
 

@@ -28,6 +28,16 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-5-5'),
+        'max_searches' => (int) env('ANTHROPIC_MAX_SEARCHES', 5),
+        'web_search_tool' => env('ANTHROPIC_WEB_SEARCH_TOOL', 'web_search_20260209'),
+        'timeout' => (int) env('ANTHROPIC_TIMEOUT', 120),
+        // Re-runs a declined request on another model server-side ("default" fallbacks).
+        'use_fallbacks' => (bool) env('ANTHROPIC_USE_FALLBACKS', true),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // The users table migration already creates these columns on fresh installs.
+        if (Schema::hasColumn('users', 'force_password_change')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->boolean('force_password_change')
                 ->default(false)

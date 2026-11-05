@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Head } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
+import { index as assetResearchIndex } from '@/routes/asset-research'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { dashboard } from '@/routes'
 import { type BreadcrumbItem } from '@/types'
@@ -38,6 +39,7 @@ import {
     MapPin,
     PackageCheck,
     ShieldAlert,
+    Sparkles,
     TrendingUp,
     Wrench,
 } from 'lucide-vue-next'
@@ -96,6 +98,7 @@ interface DashboardProps {
     assetYearSummary: AssetYearSummaryRow[]
     expiringSoon: number
     securityStats?: Record<string, number>
+    aiResearchPending?: number | null
 }
 
 const props = defineProps<DashboardProps>()
@@ -782,6 +785,27 @@ const statusBarChart = computed<ChartData<'bar'>>(() => ({
                         </div>
                     </div>
                 </section>
+
+                <!-- AI RESEARCH (only for users with the AI permissions) -->
+                <Link
+                    v-if="aiResearchPending !== null && aiResearchPending !== undefined"
+                    :href="assetResearchIndex().url"
+                    class="flex flex-col gap-2 rounded-xl border border-indigo-400/20 bg-indigo-500/10 px-3 py-2.5 transition hover:bg-indigo-500/20 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div class="flex items-center gap-2">
+                        <Sparkles class="h-4 w-4 shrink-0 text-indigo-300" />
+                        <div>
+                            <p class="text-sm font-semibold text-white">AI Research</p>
+                            <p class="text-xs text-indigo-200/80">
+                                <template v-if="aiResearchPending > 0">
+                                    {{ formatNumber(aiResearchPending) }} AI suggestion{{ aiResearchPending === 1 ? '' : 's' }} waiting for review
+                                </template>
+                                <template v-else>Look up specs and market prices for IT assets with AI</template>
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-semibold text-indigo-200">Open AI Research →</span>
+                </Link>
 
                 <!-- PRIMARY METRICS: AUTO-FIT REMOVES EMPTY GRID SPACE -->
                 <section class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2">
