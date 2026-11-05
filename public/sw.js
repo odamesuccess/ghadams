@@ -1,4 +1,6 @@
-const CACHE_NAME = 'ghadams-pwa-v1';
+// Bump the version whenever caching rules change: activate deletes older caches.
+// v2: stop caching app routes under /assets/ (v1 served stale JSON for /assets/{id}/suggestions).
+const CACHE_NAME = 'ghadams-pwa-v2';
 
 const STATIC_ASSETS = [
     '/offline.html',
@@ -55,7 +57,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    if (request.headers.get('accept')?.includes('text/html')) {
+    const accept = request.headers.get('accept') || '';
+
+    if (accept.includes('text/html')) {
         event.respondWith(
             fetch(request).catch(() => caches.match('/offline.html'))
         );
@@ -63,8 +67,18 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Never cache app data (JSON, Inertia and XHR requests): it must always be fresh.
     if (
-        url.pathname.startsWith('/assets/') ||
+        accept.includes('application/json') ||
+        request.headers.has('x-inertia') ||
+        request.headers.get('x-requested-with') === 'XMLHttpRequest'
+    ) {
+        return;
+    }
+
+    // Cache-first for static files only. Note: /assets/* are app routes
+    // (asset pages and JSON); Vite's built files live under /build/assets/.
+    if (
         url.pathname.startsWith('/build/') ||
         url.pathname.startsWith('/images/') ||
         url.pathname.endsWith('.css') ||

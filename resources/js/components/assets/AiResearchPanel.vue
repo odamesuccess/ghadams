@@ -21,6 +21,8 @@ const props = defineProps<{
 const emit = defineEmits<{
     /** Fired after a suggestion is approved, with the asset's new values. */
     applied: [current: CurrentValues];
+    /** Fired when a research run started here has finished (success or failure). */
+    researched: [suggestion: AssetSuggestion];
 }>();
 
 const {
@@ -39,7 +41,9 @@ const {
     startResearch,
     approve,
     reject,
-} = useAssetResearch(props.assetId);
+} = useAssetResearch(props.assetId, {
+    onResult: (suggestion) => emit('researched', suggestion),
+});
 
 const showHistory = ref(false);
 
@@ -226,8 +230,9 @@ const statusClass = (s: AssetSuggestion) =>
                     class="flex flex-wrap items-center gap-3 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm text-amber-100"
                 >
                     <span
-                        >Research is taking longer than expected. It may still
-                        finish in the background.</span
+                        >Research is taking longer than usual. It's still
+                        running, and this panel will update when it finishes.
+                        You can also leave and come back later.</span
                     >
                     <Button size="sm" variant="outline" @click="load"
                         >Check again</Button

@@ -435,9 +435,8 @@ const formatDate = (value: string | null) =>
                                             The AI searches using the asset
                                             type, brand and these numbers.
                                             They're optional, but a saved model
-                                            or part number gives an exact
-                                            match instead of comparable
-                                            products.
+                                            or part number gives an exact match
+                                            instead of comparable products.
                                         </p>
                                     </form>
 
@@ -445,6 +444,7 @@ const formatDate = (value: string | null) =>
                                         :key="row.id"
                                         :asset-id="row.id"
                                         @applied="refresh"
+                                        @researched="refresh"
                                     />
                                 </td>
                             </tr>

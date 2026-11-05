@@ -626,9 +626,7 @@ const noData = computed(() => {
                                         }}<template
                                             v-if="price.discarded_offers"
                                             >;
-                                            {{
-                                                price.discarded_offers
-                                            }}
+                                            {{ price.discarded_offers }}
                                             unverified listing{{
                                                 price.discarded_offers === 1
                                                     ? ' was'

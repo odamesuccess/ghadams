@@ -134,6 +134,8 @@ async function request<T>(
     const response = await fetch(url, {
         method,
         credentials: 'same-origin',
+        // Research results change in the background; never reuse a cached answer.
+        cache: 'no-store',
         headers: {
             Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
@@ -191,9 +193,16 @@ export function saveAssetIdentifiers(
 /* ======================= Composable ======================= */
 
 const POLL_INTERVAL_MS = 4000;
-const POLL_TIMEOUT_MS = 4 * 60 * 1000;
+/** After this, show the "taking longer" notice and poll less often. */
+const SLOW_AFTER_MS = 4 * 60 * 1000;
+const SLOW_POLL_INTERVAL_MS = 15000;
+/** Stop polling entirely after this (the job's retries can run ~10 minutes). */
+const POLL_TIMEOUT_MS = 15 * 60 * 1000;
 
-export function useAssetResearch(assetId: number) {
+export function useAssetResearch(
+    assetId: number,
+    options: { onResult?: (suggestion: AssetSuggestion) => void } = {},
+) {
     const data = ref<SuggestionsResponse | null>(null);
     const loading = ref(false);
     const loadError = ref<string | null>(null);
@@ -260,29 +269,44 @@ export function useAssetResearch(assetId: number) {
         requestedAt: number,
         startedAt: number,
     ): void {
-        pollTimer = setTimeout(async () => {
-            await load();
+        const slow = Date.now() - startedAt > SLOW_AFTER_MS;
 
-            const arrived = suggestions.value.find(
-                (s) =>
-                    s.mode === mode &&
-                    s.created_at !== null &&
-                    Date.parse(s.created_at) >= requestedAt,
-            );
+        pollTimer = setTimeout(
+            async () => {
+                await load();
 
-            if (arrived) {
-                researching.value = null;
-                return;
-            }
+                const arrived = suggestions.value.find(
+                    (s) =>
+                        s.mode === mode &&
+                        s.created_at !== null &&
+                        Date.parse(s.created_at) >= requestedAt,
+                );
 
-            if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
-                researching.value = null;
-                timedOut.value = true;
-                return;
-            }
+                if (arrived) {
+                    researching.value = null;
+                    timedOut.value = false;
+                    options.onResult?.(arrived);
+                    return;
+                }
 
-            poll(mode, requestedAt, startedAt);
-        }, POLL_INTERVAL_MS);
+                const elapsed = Date.now() - startedAt;
+
+                if (elapsed > POLL_TIMEOUT_MS) {
+                    researching.value = null;
+                    timedOut.value = true;
+                    return;
+                }
+
+                // Long runs: free the buttons and show the notice, but keep checking.
+                if (elapsed > SLOW_AFTER_MS) {
+                    researching.value = null;
+                    timedOut.value = true;
+                }
+
+                poll(mode, requestedAt, startedAt);
+            },
+            slow ? SLOW_POLL_INTERVAL_MS : POLL_INTERVAL_MS,
+        );
     }
 
     async function startResearch(
