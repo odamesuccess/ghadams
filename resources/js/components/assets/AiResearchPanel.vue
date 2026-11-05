@@ -49,7 +49,15 @@ const showHistory = ref(false);
 
 onMounted(load);
 
-const supported = computed(() => Boolean(data.value?.category));
+const hasCategory = computed(() => Boolean(data.value?.category));
+/** Research needs a model or part number: type and brand alone are too vague. */
+const hasModelOrPart = computed(() =>
+    Boolean(
+        data.value?.current.model_number?.trim() ||
+        data.value?.current.part_number?.trim(),
+    ),
+);
+const supported = computed(() => hasCategory.value && hasModelOrPart.value);
 const lastMode = ref<ResearchMode>('full');
 
 function run(mode: ResearchMode, force = false): void {
@@ -183,8 +191,12 @@ const statusClass = (s: AssetSuggestion) =>
             </p>
 
             <template v-else-if="data">
-                <p v-if="!supported" class="text-sm text-slate-400">
+                <p v-if="!hasCategory" class="text-sm text-slate-400">
                     AI research isn't available for this asset type.
+                </p>
+                <p v-else-if="!hasModelOrPart" class="text-sm text-slate-400">
+                    Add a model number or part number to this asset to use AI
+                    research.
                 </p>
 
                 <!-- In progress -->
@@ -293,8 +305,7 @@ const statusClass = (s: AssetSuggestion) =>
                     <span class="font-medium text-slate-200"
                         >Auto-fill with AI</span
                     >
-                    to look this asset up by its type and brand. Saving a model
-                    or part number first gives an exact match.
+                    to look this asset up by its brand and model or part number.
                 </p>
 
                 <!-- History -->

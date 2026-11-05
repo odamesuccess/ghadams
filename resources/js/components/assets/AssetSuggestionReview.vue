@@ -223,6 +223,14 @@ const FLAG_LABELS: Record<string, { text: string; tone: 'warn' | 'info' }> = {
         text: 'Prices found in several currencies',
         tone: 'warn',
     },
+    converted_to_ghs: {
+        text: 'Converted to cedis from a price abroad',
+        tone: 'warn',
+    },
+    no_exchange_rate: {
+        text: 'Prices found abroad, but no exchange rate to convert them',
+        tone: 'info',
+    },
     ambiguous_model: {
         text: 'Model number matches several products',
         tone: 'warn',
@@ -635,6 +643,38 @@ const noData = computed(() => {
                                             ignored</template
                                         >.
                                     </p>
+                                    <p
+                                        v-for="rate in price.converted_from ??
+                                        []"
+                                        :key="rate.currency"
+                                        class="mt-1 text-xs text-amber-300/90"
+                                    >
+                                        Converted from {{ rate.currency }} at 1
+                                        {{ rate.currency }} =
+                                        {{ rate.ghs_per_unit }} GHS
+                                        <template
+                                            v-if="rate.source === 'configured'"
+                                            >(fixed rate set by the
+                                            administrator)</template
+                                        >
+                                        <template v-else>
+                                            <template v-if="rate.date"
+                                                >({{ rate.date }})</template
+                                            >
+                                            ·
+                                            <a
+                                                v-if="
+                                                    rate.url &&
+                                                    safeUrl(rate.url)
+                                                "
+                                                :href="safeUrl(rate.url)!"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="text-indigo-300 underline-offset-2 hover:underline"
+                                                >{{ hostname(rate.url) }}</a
+                                            >
+                                        </template>
+                                    </p>
                                 </td>
                             </tr>
                             <tr v-if="price.offers?.length">
@@ -654,6 +694,20 @@ const noData = computed(() => {
                                                     offer.currency,
                                                 )
                                             }}
+                                            <span
+                                                v-if="
+                                                    offer.amount_ghs != null &&
+                                                    offer.currency !== 'GHS'
+                                                "
+                                                class="text-slate-400"
+                                                >(≈
+                                                {{
+                                                    formatMoney(
+                                                        offer.amount_ghs,
+                                                        'GHS',
+                                                    )
+                                                }})</span
+                                            >
                                             <span
                                                 v-if="offer.condition"
                                                 class="text-slate-500 capitalize"

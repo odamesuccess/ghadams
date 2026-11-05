@@ -19,12 +19,14 @@ use Inertia\Response;
  */
 class AssetResearchController extends Controller
 {
-    public const STATUS_FILTERS = ['pending', 'failed', 'none', 'approved', 'missing_ids'];
+    public const STATUS_FILTERS = ['pending', 'failed', 'none', 'approved'];
 
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $filters = $request->only('search', 'status');
+        $filters = $request->only('search', 'status', 'per_page');
+        // The page picks this from the screen height ("Auto") or the "Show" menu.
+        $perPage = min(100, max(5, $request->integer('per_page', 25)));
 
         $assets = $this->scopedAssets($user)
             ->with([
@@ -37,7 +39,7 @@ class AssetResearchController extends Controller
             ->when(in_array($request->input('status'), self::STATUS_FILTERS, true), fn (Builder $q) => $this->applyStatus($q, $request->input('status')))
             ->orderByDesc('has_pending_review')
             ->latest('updated_at')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Asset $asset) => [
                 'id' => $asset->id,
@@ -65,7 +67,6 @@ class AssetResearchController extends Controller
                 'failed' => $this->applyStatus($this->scopedAssets($user), 'failed')->count(),
                 'none' => $this->applyStatus($this->scopedAssets($user), 'none')->count(),
                 'approved' => $this->applyStatus($this->scopedAssets($user), 'approved')->count(),
-                'missing_ids' => $this->applyStatus($this->scopedAssets($user), 'missing_ids')->count(),
             ],
             'filters' => $filters,
             'canEditIdentifiers' => $user->can('assets.research'),
@@ -199,14 +200,18 @@ class AssetResearchController extends Controller
     ========================================================= */
 
     /**
-     * Research-ready assets (every type, unless the default category is turned off),
-     * limited to the user's unit unless Super Admin (the same rule AssetSuggestionPolicy uses).
+     * Research-ready assets: those with a model or part number (every type, unless the
+     * default category is turned off), limited to the user's unit unless Super Admin
+     * (the same rule AssetSuggestionPolicy uses).
      */
     protected function scopedAssets(User $user): Builder
     {
         $abbreviations = array_keys((array) config('asset_research.asset_type_categories', []));
 
         return Asset::query()
+            ->where(fn ($q) => $q
+                ->where(fn ($m) => $m->whereNotNull('model_number')->whereRaw("TRIM(model_number) <> ''"))
+                ->orWhere(fn ($p) => $p->whereNotNull('part_number')->whereRaw("TRIM(part_number) <> ''")))
             ->when(! $this->allTypesResearchable(), fn ($q) => $q
                 ->whereHas('assetName', fn ($n) => $n->whereIn('assetname_abbreviation', $abbreviations)))
             ->when(! $user->hasRole('Super Admin'), fn ($q) => $q->where('unit_id', $user->unit_id));
@@ -226,7 +231,6 @@ class AssetResearchController extends Controller
                 ->whereNotNull('error_message')),
             'none' => $query->whereDoesntHave('suggestions'),
             'approved' => $query->whereHas('suggestions', fn ($q) => $q->where('status', AssetSuggestion::STATUS_APPROVED)),
-            'missing_ids' => $query->whereNull('model_number')->whereNull('part_number'),
             default => $query,
         };
     }

@@ -25,6 +25,16 @@ export interface PriceOffer {
     condition: string | null;
     seller: string | null;
     url: string;
+    /** The listed amount in Ghana cedis (null when no exchange rate was available). */
+    amount_ghs?: number | null;
+}
+
+export interface ExchangeRateUsed {
+    currency: string;
+    ghs_per_unit: number;
+    url: string | null;
+    date: string | null;
+    source: 'web' | 'configured' | 'same';
 }
 
 export interface PriceSummary {
@@ -38,6 +48,8 @@ export interface PriceSummary {
     discarded_offers?: number;
     retrieved_at?: string | null;
     offers?: PriceOffer[];
+    /** Currencies converted into cedis for this price, with the rates used. */
+    converted_from?: ExchangeRateUsed[];
     edited_by_reviewer?: boolean;
 }
 

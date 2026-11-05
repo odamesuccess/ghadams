@@ -209,25 +209,52 @@ return [
     'price_domains' => [],
 
     /*
-    | Prices outside these bounds (in whatever currency was found) are flagged
-    | as implausible and the suggestion is marked low confidence.
+    | Prices are recorded in Ghana cedis. The AI looks first for sellers in Ghana
+    | (these sites are a preference, not a limit). A price found in another
+    | currency is converted at a disclosed rate: the original price, the rate
+    | and its source are kept with the suggestion and shown to the reviewer.
+    */
+    'target_currency' => 'GHS',
+
+    'preferred_sellers' => [
+        'jumia.com.gh',
+        'compughana.com',
+        'frankotrading.com',
+        'telefonika.com',
+        'melcom.com',
+    ],
+
+    /*
+    | Optional fixed rates: Ghana cedis for 1 unit of the currency. A currency set
+    | here always uses this rate; any other currency uses the rate the AI cites
+    | from a page it found (e.g. the Bank of Ghana), with that page as the source.
+    */
+    'exchange_rates' => array_filter([
+        'USD' => (float) env('ASSET_RESEARCH_GHS_PER_USD', 0),
+        'EUR' => (float) env('ASSET_RESEARCH_GHS_PER_EUR', 0),
+        'GBP' => (float) env('ASSET_RESEARCH_GHS_PER_GBP', 0),
+    ]),
+
+    /*
+    | Prices (in Ghana cedis) outside these bounds are flagged as implausible
+    | and the suggestion is marked low confidence.
     */
     'plausible_price_range' => [
-        'laptop' => ['min' => 100, 'max' => null],
-        'desktop' => ['min' => 100, 'max' => null],
-        'printer' => ['min' => 30, 'max' => null],
-        'scanner' => ['min' => 30, 'max' => null],
-        'hard_drive' => ['min' => 10, 'max' => null],
-        'usb_drive' => ['min' => null, 'max' => 500],
-        'server' => ['min' => 300, 'max' => null],
-        'ups' => ['min' => 20, 'max' => null],
-        'projector' => ['min' => 50, 'max' => null],
-        'display' => ['min' => 50, 'max' => null],
-        'network_device' => ['min' => 10, 'max' => null],
-        'camera' => ['min' => 10, 'max' => null],
-        'air_conditioner' => ['min' => 100, 'max' => null],
-        'generator' => ['min' => 100, 'max' => null],
-        'furniture' => ['min' => 10, 'max' => null],
+        'laptop' => ['min' => 1500, 'max' => null],
+        'desktop' => ['min' => 1500, 'max' => null],
+        'printer' => ['min' => 450, 'max' => null],
+        'scanner' => ['min' => 450, 'max' => null],
+        'hard_drive' => ['min' => 150, 'max' => null],
+        'usb_drive' => ['min' => null, 'max' => 7500],
+        'server' => ['min' => 4500, 'max' => null],
+        'ups' => ['min' => 300, 'max' => null],
+        'projector' => ['min' => 750, 'max' => null],
+        'display' => ['min' => 750, 'max' => null],
+        'network_device' => ['min' => 150, 'max' => null],
+        'camera' => ['min' => 150, 'max' => null],
+        'air_conditioner' => ['min' => 1500, 'max' => null],
+        'generator' => ['min' => 1500, 'max' => null],
+        'furniture' => ['min' => 150, 'max' => null],
         // 'general' has no bounds: the types it covers vary too much.
     ],
 

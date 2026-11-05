@@ -188,30 +188,29 @@ test('research is limited to assets in the user\'s own unit', function () {
     Queue::assertNothingPushed();
 });
 
-test('research runs on asset type and brand when there is no model or part number', function () {
+test('research is refused when there is no model or part number, even with a brand', function () {
     Queue::fake();
     $user = researchUser(['assets.research']);
-    $asset = researchAsset($user, ['model_number' => null, 'part_number' => null]);
+    $asset = researchAsset($user, ['brand' => 'HP', 'model_number' => null, 'part_number' => '  ']);
+
+    $this->actingAs($user)
+        ->postJson(route('assets.research', $asset))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('model_number');
+
+    Queue::assertNothingPushed();
+});
+
+test('a part number alone is enough for research', function () {
+    Queue::fake();
+    $user = researchUser(['assets.research']);
+    $asset = researchAsset($user, ['model_number' => null, 'part_number' => '3G2A3EA']);
 
     $this->actingAs($user)
         ->postJson(route('assets.research', $asset))
         ->assertAccepted();
 
     Queue::assertPushed(ResearchAssetJob::class);
-});
-
-test('research needs at least a brand, model or part number', function () {
-    Queue::fake();
-    $user = researchUser(['assets.research']);
-    $asset = researchAsset($user, ['brand' => null, 'model_number' => null, 'part_number' => null]);
-    $asset->assetName->update(['brand' => '']);
-
-    $this->actingAs($user)
-        ->postJson(route('assets.research', $asset))
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('brand');
-
-    Queue::assertNothingPushed();
 });
 
 test('the asset type brand is used when the asset has no brand', function () {
@@ -293,10 +292,10 @@ test('the job stores a pending suggestion and does not change the asset', functi
     Http::fake(['api.anthropic.com/*' => Http::sequence()
         ->push(claudeResponse(specAnswer(), ['https://www.hp.com/elitebook-840-g8']))
         ->push(claudeResponse(priceAnswer([
-            ['amount' => 1200, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Shop A', 'url' => 'https://shop-a.example/840-g8'],
-            ['amount' => 1300, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Shop B', 'url' => 'https://shop-b.example/840-g8'],
+            ['amount' => 12000, 'currency' => 'GHS', 'condition' => 'new', 'seller' => 'Shop A', 'url' => 'https://shop-a.example/840-g8'],
+            ['amount' => 13000, 'currency' => 'GHS', 'condition' => 'new', 'seller' => 'Shop B', 'url' => 'https://shop-b.example/840-g8'],
             // Not in the search results, so it must be discarded.
-            ['amount' => 5, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Made up', 'url' => 'https://invented.example/x'],
+            ['amount' => 5, 'currency' => 'GHS', 'condition' => 'new', 'seller' => 'Made up', 'url' => 'https://invented.example/x'],
         ]), ['https://shop-a.example/840-g8', 'https://www.shop-b.example/840-g8/'])),
     ]);
 
@@ -314,8 +313,10 @@ test('the job stores a pending suggestion and does not change the asset', functi
         ->and($suggestion->payload['category'])->toBe('laptop')
         ->and($suggestion->payload['specifications']['ram_gb'])->toBe(16)
         ->and($suggestion->payload['specifications'])->toHaveKey('gpu') // every schema field, null when unknown
-        ->and($suggestion->payload['price']['low'])->toEqual(1200)
-        ->and($suggestion->payload['price']['high'])->toEqual(1300)
+        ->and($suggestion->payload['price']['low'])->toEqual(12000)
+        ->and($suggestion->payload['price']['high'])->toEqual(13000)
+        ->and($suggestion->payload['price']['currency'])->toBe('GHS')
+        ->and($suggestion->payload['price']['converted_from'])->toBe([])
         ->and($suggestion->payload['price']['price_type'])->toBe('range')
         ->and($suggestion->payload['price']['discarded_offers'])->toBe(1);
 
@@ -327,29 +328,118 @@ test('the job stores a pending suggestion and does not change the asset', functi
         && $request['tools'][0]['type'] === 'web_search_20260209');
 });
 
-test('research without a model number is flagged and marked low confidence', function () {
-    Http::fake(['api.anthropic.com/*' => Http::sequence()
-        ->push(claudeResponse(specAnswer(['model' => null, 'variants' => ['ProBook 450 G9', 'EliteBook 840 G8']]), ['https://www.hp.com/elitebook-840-g8']))
-        ->push(claudeResponse(priceAnswer([
-            ['amount' => 900, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Shop A', 'url' => 'https://shop-a.example/hp-laptop'],
-        ]), ['https://shop-a.example/hp-laptop'])),
-    ]);
+/* =========================================================
+   Prices in Ghana cedis
+========================================================= */
+
+/** Run a price-only research with the given price answer and search-result URLs. */
+function researchPriceWith(array $answer, array $urls): AssetSuggestion
+{
+    Http::fake(['api.anthropic.com/*' => Http::response(claudeResponse($answer, $urls))]);
 
     $user = researchUser(['assets.research']);
-    $asset = researchAsset($user, ['model_number' => null, 'part_number' => null, 'serial_number' => 'N/A']);
+    $asset = researchAsset($user);
+
+    ResearchAssetJob::dispatchSync($asset->id, 'price_only', $user->id);
+
+    return AssetSuggestion::sole();
+}
+
+test('the price search asks for Ghanaian sellers and cedis first', function () {
+    researchPriceWith(priceAnswer([]), []);
+
+    Http::assertSent(fn ($request) => str_contains($request['system'], 'Ghana cedis (GHS')
+        && str_contains($request['system'], 'jumia.com.gh')
+        && str_contains($request['system'], 'exchange_rates'));
+});
+
+test('listings in cedis are used ahead of listings abroad', function () {
+    $suggestion = researchPriceWith([
+        'confidence' => 'high',
+        'offers' => [
+            ['amount' => 14500, 'currency' => 'GHS', 'condition' => 'new', 'seller' => 'Accra Shop', 'url' => 'https://shop.example.gh/hp'],
+            ['amount' => 900, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'US Shop', 'url' => 'https://us.example/hp'],
+        ],
+        'exchange_rates' => [['currency' => 'USD', 'ghs_per_unit' => 15.5, 'url' => 'https://rates.example/usd', 'date' => '2026-11-05']],
+    ], ['https://shop.example.gh/hp', 'https://us.example/hp', 'https://rates.example/usd']);
+
+    $price = $suggestion->payload['price'];
+
+    expect($price['amount'])->toEqual(14500)
+        ->and($price['currency'])->toBe('GHS')
+        ->and($price['converted_from'])->toBe([])
+        ->and($price['sources_count'])->toBe(1)
+        ->and($suggestion->payload['flags'])->not->toContain('converted_to_ghs');
+});
+
+test('a price abroad is converted to cedis at the cited rate, which is recorded', function () {
+    $suggestion = researchPriceWith([
+        'confidence' => 'medium',
+        'offers' => [
+            ['amount' => 1000, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Shop A', 'url' => 'https://a.example/hp'],
+            ['amount' => 1100, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Shop B', 'url' => 'https://b.example/hp'],
+        ],
+        'exchange_rates' => [['currency' => 'usd', 'ghs_per_unit' => 15.5, 'url' => 'https://bog.example/rates', 'date' => '2026-11-05']],
+    ], ['https://a.example/hp', 'https://b.example/hp', 'https://bog.example/rates']);
+
+    $price = $suggestion->payload['price'];
+
+    expect($price['currency'])->toBe('GHS')
+        ->and($price['low'])->toEqual(15500)
+        ->and($price['high'])->toEqual(17050)
+        ->and($price['converted_from'])->toBe([[
+            'currency' => 'USD', 'ghs_per_unit' => 15.5, 'url' => 'https://bog.example/rates', 'date' => '2026-11-05', 'source' => 'web',
+        ]])
+        // The listed amounts are kept as found, next to their cedi value.
+        ->and($price['offers'][0])->toMatchArray(['amount' => 1000, 'currency' => 'USD', 'amount_ghs' => 15500])
+        ->and($suggestion->payload['flags'])->toContain('converted_to_ghs')
+        ->and(collect($suggestion->sources)->pluck('url'))->toContain('https://bog.example/rates');
+});
+
+test('a rate from a page the search did not return is ignored', function () {
+    $suggestion = researchPriceWith([
+        'confidence' => 'medium',
+        'offers' => [['amount' => 1000, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Shop A', 'url' => 'https://a.example/hp']],
+        'exchange_rates' => [['currency' => 'USD', 'ghs_per_unit' => 15.5, 'url' => 'https://made-up.example/rate', 'date' => null]],
+    ], ['https://a.example/hp']);
+
+    expect($suggestion->payload['price'])->toBeNull()
+        ->and($suggestion->payload['flags'])->toContain('no_exchange_rate');
+});
+
+test('a fixed rate set by the administrator is used instead of the cited one', function () {
+    config(['asset_research.exchange_rates' => ['USD' => 16]]);
+
+    $suggestion = researchPriceWith([
+        'confidence' => 'medium',
+        'offers' => [['amount' => 1000, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Shop A', 'url' => 'https://a.example/hp']],
+        'exchange_rates' => [['currency' => 'USD', 'ghs_per_unit' => 15.5, 'url' => 'https://bog.example/rates', 'date' => null]],
+    ], ['https://a.example/hp', 'https://bog.example/rates']);
+
+    expect($suggestion->payload['price']['amount'])->toEqual(16000)
+        ->and($suggestion->payload['price']['converted_from'][0]['source'])->toBe('configured');
+});
+
+test('implausible prices are judged in cedis', function () {
+    $suggestion = researchPriceWith([
+        'confidence' => 'high',
+        'offers' => [['amount' => 900, 'currency' => 'GHS', 'condition' => 'new', 'seller' => 'Shop', 'url' => 'https://shop.example.gh/hp']],
+    ], ['https://shop.example.gh/hp']);
+
+    expect($suggestion->payload['flags'])->toContain('implausible_price')
+        ->and($suggestion->confidence)->toBe('low');
+});
+
+test('a queued job never calls the AI for an asset without a model or part number', function () {
+    Http::fake();
+
+    $user = researchUser(['assets.research']);
+    $asset = researchAsset($user, ['model_number' => null, 'part_number' => null]);
 
     ResearchAssetJob::dispatchSync($asset->id, 'full', $user->id);
 
-    $suggestion = AssetSuggestion::sole();
-
-    expect($suggestion->error_message)->toBeNull()
-        ->and($suggestion->confidence)->toBe('low')
-        ->and($suggestion->payload['flags'])->toContain('no_model_number');
-
-    Http::assertSent(fn ($request) => str_contains($request['messages'][0]['content'], '"brand": "HP"')
-        && str_contains($request['messages'][0]['content'], 'Laptop Computer')
-        && str_contains($request['messages'][0]['content'], 'No model or part number is recorded')
-        && ! str_contains($request['messages'][0]['content'], 'serial_number'));
+    Http::assertNothingSent();
+    expect(AssetSuggestion::whereNull('error_message')->count())->toBe(0);
 });
 
 test('a refusal is stored as a failed suggestion', function () {
@@ -534,6 +624,23 @@ test('the AI research page lists assets of every type', function () {
             ->component('AssetResearch/Index')
             ->where('assets.total', 3)
             ->where('otherTypeMatches', null));
+});
+
+test('the AI research page hides assets without a model or part number', function () {
+    $user = researchUser(['assets.research']);
+    $withModel = researchAsset($user);
+    $withPart = researchAsset($user, ['model_number' => null, 'part_number' => '3G2A3EA']);
+    researchAsset($user, ['model_number' => null, 'part_number' => null]);
+    researchAsset($user, ['model_number' => '', 'part_number' => ' ']);
+
+    $this->actingAs($user)
+        ->get(route('asset-research.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('assets.total', 2)
+            ->where('counts.none', 2)
+            ->where('assets.data', fn ($rows) => collect($rows)->pluck('id')->sort()->values()->all()
+                === collect([$withModel->id, $withPart->id])->sort()->values()->all()));
 });
 
 test('researchers can set the model and part number only', function () {

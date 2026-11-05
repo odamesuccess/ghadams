@@ -40,7 +40,7 @@ class ResearchAssetRequest extends FormRequest
                 }
 
                 if (! $research->hasIdentifiers($asset)) {
-                    $validator->errors()->add('brand', 'Add a brand, model number or part number before running AI research.');
+                    $validator->errors()->add('model_number', 'Add a model number or part number before running AI research.');
                 }
             },
         ];
