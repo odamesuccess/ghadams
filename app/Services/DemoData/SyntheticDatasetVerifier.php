@@ -2,10 +2,10 @@
 
 namespace App\Services\DemoData;
 
+use App\Services\AssetCodeGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -48,7 +48,7 @@ class SyntheticDatasetVerifier
 
         // 1. Exactly 2,000 synthetic assets, all present and not soft-deleted.
         $live = $assets->whereNull('deleted_at')->count();
-        $this->check('exactly_2000_assets', count($assetIds) === 2000 && $live === 2000, "registry=".count($assetIds).", live rows={$live}");
+        $this->check('exactly_2000_assets', count($assetIds) === 2000 && $live === 2000, 'registry='.count($assetIds).", live rows={$live}");
 
         // 2. Per-year counts and the fluctuating shape.
         $byYear = [];
@@ -76,6 +76,26 @@ class SyntheticDatasetVerifier
             $this->check("unique_{$column}", $synthetic === [],
                 count($synthetic).' synthetic value(s) duplicated; '.(count($dupes) - count($synthetic)).' duplicate(s) among pre-existing rows only');
         }
+
+        // 4b. Official GES code: abbreviations match the asset's type, its original unit and that
+        //     unit's location, and the year matches the purchase date.
+        $units = DB::table('units')->get(['id', 'unit_abbreviation', 'location_abbreviation'])->keyBy('id');
+        $badCodes = [];
+        foreach ($assets as $asset) {
+            $parts = AssetCodeGenerator::parse((string) $asset->asset_code);
+            $meta = json_decode((string) ($registry[$asset->id]->meta ?? ''), true) ?: [];
+            $unit = $units[$meta['initial_unit_id'] ?? $asset->unit_id] ?? null;
+            $ok = $parts && $unit
+                && strcasecmp($parts['unit'], trim((string) $unit->unit_abbreviation)) === 0
+                && strcasecmp($parts['location'], trim((string) $unit->location_abbreviation)) === 0
+                && strcasecmp($parts['type'], trim((string) ($abbr[$asset->assetname_id] ?? ''))) === 0
+                && $parts['year'] === (int) substr((string) $asset->purchase_date, 0, 4);
+            if (! $ok) {
+                $badCodes[] = $asset->asset_code;
+            }
+        }
+        $this->check('official_asset_code_format', $badCodes === [],
+            count($badCodes).' code(s) not in GES\\UNIT\\LOCATION\\TYPE\\SEQ\\YEAR\\NN form'.($badCodes ? ', e.g. '.$badCodes[0] : ''));
 
         // 5. QR images exist and their payload route resolves to the asset.
         $qrMissing = 0;
@@ -284,7 +304,7 @@ class SyntheticDatasetVerifier
             'price_assumptions' => 'All GHS bands and the price index in config/demo_dataset.php are rough testing estimates, not market research, not GES prices and not exchange rates.',
             'provenance' => 'Generated from config/demo_dataset.php with a fixed seed. Suppliers and maintenance providers are the application\'s existing fictional records. Brands/models are used only within their stated year windows; generic entries have no model number.',
             'images' => 'Representative type photographs from storage/app/public/'.SyntheticDatasetWriter::TYPE_PHOTO_MANIFEST.' (licence and attribution recorded there). They show the asset type, not the exact model or unit.',
-            'ownership' => 'Every generated row is listed in table '.SyntheticDatasetWriter::REGISTRY.' with dataset = '.$config['dataset'].'. Asset codes start with "'.$config['asset_code_prefix'].'\\", serials with "'.$config['serial_prefix'].'-", transfer codes with "SYN-AT-", users have emails @'.$config['user_email_domain'].' and are Inactive.',
+            'ownership' => 'Every generated row is listed in table '.SyntheticDatasetWriter::REGISTRY.' with dataset = '.$config['dataset'].'. Asset codes use the official GES format (not a marker: use this registry), serials with "'.$config['serial_prefix'].'-", transfer codes with "SYN-AT-", users have emails @'.$config['user_email_domain'].' and are Inactive.',
             'limitations' => [
                 'Synthetic records; any accuracy measured on them says nothing about real GES predictive performance.',
                 'The live schema has no invoice amount, amount-paid or payment-reference columns; invoice/payment references and amounts are in '.SyntheticDatasetWriter::REGISTRY.'.meta and in the invoice PDF.',
@@ -400,7 +420,7 @@ class SyntheticDatasetVerifier
     private function dictionary(): array
     {
         return [
-            'assets.asset_code' => 'SYN\\UNIT\\LOCATION\\TYPE\\QTY-AT-UNIT-IN-YEAR\\YEAR\\TYPE-COUNT, mirroring AssetCodeGenerator with GES replaced by SYN. Code keeps the original unit after transfers.',
+            'assets.asset_code' => 'GES\\UNIT\\LOCATION\\TYPE\\LOCATION-SEQUENCE\\YEAR\\TYPE-SEQUENCE (2+ digits), assigned by AssetCodeGenerator at write time, numbered after the existing codes; both sequences reset each purchase year. Code keeps the original unit after transfers.',
             'assets.serial_number' => 'SYN-TYPE-YY-XXXXXX. Synthetic; not a manufacturer serial.',
             'assets.brand / model_number / part_number' => 'From config catalogue; model only within release-year window; null model for generic items.',
             'assets.purchase_cost' => 'GHS, 2 dp. band x price_index[year] x model tier x volume factor x +/-3%. Assumption, not market data.',

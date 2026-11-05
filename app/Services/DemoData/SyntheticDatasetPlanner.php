@@ -47,8 +47,6 @@ class SyntheticDatasetPlanner
 
     private array $usedSerials = [];
 
-    private array $usedCodes = [];
-
     private array $supplierWindows = [];
 
     public function __construct(private array $config, private array $context)
@@ -200,30 +198,10 @@ class SyntheticDatasetPlanner
             usort($items, fn ($a, $b) => [$a['purchase_date'], $a['batch_seq'], $a['item_seq']]
                 <=> [$b['purchase_date'], $b['batch_seq'], $b['item_seq']]);
 
-            $qty = [];
-            $typeCount = [];
-
             foreach ($items as $item) {
-                $unit = $this->context['units'][$item['unit']];
-                $qty[$item['unit']] = ($qty[$item['unit']] ?? 0) + 1;
-                $typeCount[$item['unit']][$item['type']] = ($typeCount[$item['unit']][$item['type']] ?? 0) + 1;
-
-                $item['asset_code'] = sprintf(
-                    '%s\\%s\\%s\\%s\\%d\\%d\\%02d',
-                    $this->config['asset_code_prefix'],
-                    strtoupper($item['unit']),
-                    strtoupper($unit['location']),
-                    $item['type'],
-                    $qty[$item['unit']],
-                    $year,
-                    $typeCount[$item['unit']][$item['type']],
-                );
-
-                if (isset($this->usedCodes[$item['asset_code']])) {
-                    throw new RuntimeException("Duplicate planned asset code {$item['asset_code']}.");
-                }
-
-                $this->usedCodes[$item['asset_code']] = true;
+                // Assigned on write by AssetCodeGenerator (in this purchase order), so the
+                // numbers continue after the codes already in the database.
+                $item['asset_code'] = null;
                 unset($item['batch_seq'], $item['item_seq']);
                 $item['index'] = count($this->assets);
                 $this->assets[] = $item;

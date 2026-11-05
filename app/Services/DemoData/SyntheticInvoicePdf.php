@@ -49,6 +49,30 @@ class SyntheticInvoicePdf
 
         $content .= "ET\n";
 
+        return self::assemble($content);
+    }
+
+    /**
+     * Replace the asset code printed on an invoice this class rendered, keeping the rest.
+     * Returns null when the PDF does not contain the old code.
+     */
+    public static function replaceAssetCode(string $pdf, string $old, string $new): ?string
+    {
+        if (! preg_match('/stream\n(.*?)endstream/s', $pdf, $m)) {
+            return null;
+        }
+
+        $needle = '('.self::escape('Asset: '.$old).') Tj';
+
+        if (! str_contains($m[1], $needle)) {
+            return null;
+        }
+
+        return self::assemble(str_replace($needle, '('.self::escape('Asset: '.$new).') Tj', $m[1]));
+    }
+
+    private static function assemble(string $content): string
+    {
         $objects = [
             '<< /Type /Catalog /Pages 2 0 R >>',
             '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',

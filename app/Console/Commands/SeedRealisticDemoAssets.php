@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Services\DemoAssetQrService;
 use App\Models\Asset;
+use App\Services\AssetCodeGenerator;
+use App\Services\DemoAssetQrService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -127,6 +128,7 @@ class SeedRealisticDemoAssets extends Command
 
         if (array_sum(self::DISTRIBUTION) !== self::COUNT) {
             $this->error('Internal distribution error: the Asset-Type allocation does not total 3,000.');
+
             return self::FAILURE;
         }
 
@@ -139,10 +141,10 @@ class SeedRealisticDemoAssets extends Command
         $this->info('============================================================');
         $this->newLine();
 
-        $this->line('Existing active assets: ' . DB::table('assets')->whereNull('deleted_at')->count());
-        $this->line('New realistic DEMO assets to create: ' . self::COUNT);
-        $this->line('Asset Types represented: ' . count(self::DISTRIBUTION));
-        $this->line('Active Units available: ' . count($context['units']));
+        $this->line('Existing active assets: '.DB::table('assets')->whereNull('deleted_at')->count());
+        $this->line('New realistic DEMO assets to create: '.self::COUNT);
+        $this->line('Asset Types represented: '.count(self::DISTRIBUTION));
+        $this->line('Active Units available: '.count($context['units']));
         $this->line('Image mode: multiple cached type photos per Asset Type where available');
         $this->newLine();
 
@@ -162,6 +164,7 @@ class SeedRealisticDemoAssets extends Command
             );
             $this->line('Remove the previous set first with:');
             $this->line('  php artisan assets:seed-realistic-demo --remove --remove-confirm=REMOVE-DEMO');
+
             return self::FAILURE;
         }
 
@@ -170,11 +173,13 @@ class SeedRealisticDemoAssets extends Command
             $this->line('');
             $this->line('To create the full 3,000-record dataset:');
             $this->line('  php artisan assets:seed-realistic-demo --execute --confirm=CREATE-3000-DEMO');
+
             return self::SUCCESS;
         }
 
         if ((string) $this->option('confirm') !== 'CREATE-3000-DEMO') {
             $this->error('Execution blocked: --confirm=CREATE-3000-DEMO is required.');
+
             return self::FAILURE;
         }
 
@@ -188,7 +193,6 @@ class SeedRealisticDemoAssets extends Command
         shuffle($statusPool);
 
         $now = now();
-        $runTag = $now->format('ymdHis');
         $globalSequence = 0;
         $rows = [];
         $created = 0;
@@ -212,18 +216,17 @@ class SeedRealisticDemoAssets extends Command
                     $brand = $this->randomFrom(self::BRANDS[$assetType]);
                     [$minCost, $maxCost] = self::COST_RANGES[$assetType];
 
-                    $unitCode = $this->cleanCode($unit->unit_abbreviation ?: 'UNIT');
-                    $locationCode = $this->cleanCode($unit->location_abbreviation ?: 'LOC');
-                    $assetAbbr = $this->cleanCode($assetName->assetname_abbreviation ?: Str::upper(Str::substr(Str::slug($assetType, ''), 0, 4)));
+                    // Same official code as a normal registration, from the stored abbreviations.
+                    if (blank($unit->unit_abbreviation) || blank($unit->location_abbreviation) || blank($assetName->assetname_abbreviation)) {
+                        throw new RuntimeException("Unit {$unit->id} or asset type {$assetType} has no code abbreviation.");
+                    }
 
-                    $assetCode = sprintf(
-                        'GES\\%s\\%s\\%s\\%d\\%s\\D%s',
-                        $unitCode,
-                        $locationCode,
-                        $assetAbbr,
-                        $typeSequence,
-                        $purchaseDate->format('Y'),
-                        $runTag . str_pad((string) $globalSequence, 4, '0', STR_PAD_LEFT),
+                    $assetCode = AssetCodeGenerator::generate(
+                        $assetName->assetname_abbreviation,
+                        $unit->location_abbreviation,
+                        $purchaseDate->toDateString(),
+                        $unit->unit_abbreviation,
+                        (int) $unit->id,
                     );
 
                     $serial = sprintf(
@@ -263,11 +266,13 @@ class SeedRealisticDemoAssets extends Command
                         'deleted_at' => null,
                     ];
 
-                    if (count($rows) >= 250) {
-                        DB::table('assets')->insert($rows);
-                        $created += count($rows);
-                        $rows = [];
-                        $this->line("  Inserted: {$created} / " . self::COUNT);
+                    // Insert each row before generating the next code, so numbering sees it.
+                    DB::table('assets')->insert($rows);
+                    $created += count($rows);
+                    $rows = [];
+
+                    if ($created % 250 === 0) {
+                        $this->line("  Inserted: {$created} / ".self::COUNT);
                     }
                 }
             }
@@ -283,11 +288,12 @@ class SeedRealisticDemoAssets extends Command
             throw $e;
         }
 
-        $this->line("  Inserted: {$created} / " . self::COUNT);
+        $this->line("  Inserted: {$created} / ".self::COUNT);
         $this->newLine();
 
         if ($created !== self::COUNT) {
             $this->error("Expected 3,000 inserts but created {$created}.");
+
             return self::FAILURE;
         }
 
@@ -334,7 +340,7 @@ class SeedRealisticDemoAssets extends Command
         );
 
         $this->line('Demo marker used for safe removal:');
-        $this->line('  ' . self::DESCRIPTION);
+        $this->line('  '.self::DESCRIPTION);
         $this->line('');
         $this->line('To remove ONLY this demo dataset later:');
         $this->line('  php artisan assets:seed-realistic-demo --remove --remove-confirm=REMOVE-DEMO');
@@ -357,7 +363,7 @@ class SeedRealisticDemoAssets extends Command
 
         if ($missingTypes !== []) {
             throw new RuntimeException(
-                'Missing required Asset Types: ' . implode(', ', $missingTypes)
+                'Missing required Asset Types: '.implode(', ', $missingTypes)
             );
         }
 
@@ -459,7 +465,7 @@ class SeedRealisticDemoAssets extends Command
         foreach (array_keys(self::DISTRIBUTION) as $assetType) {
             $slug = Str::slug($assetType);
             $pool = [];
-            $folder = storage_path('app/public/assets/type-images/' . $slug);
+            $folder = storage_path('app/public/assets/type-images/'.$slug);
 
             if (is_dir($folder)) {
                 $files = scandir($folder) ?: [];
@@ -469,7 +475,7 @@ class SeedRealisticDemoAssets extends Command
                         continue;
                     }
 
-                    $full = $folder . DIRECTORY_SEPARATOR . $file;
+                    $full = $folder.DIRECTORY_SEPARATOR.$file;
 
                     if (! is_file($full)) {
                         continue;
@@ -481,16 +487,16 @@ class SeedRealisticDemoAssets extends Command
                         continue;
                     }
 
-                    $pool[] = 'assets/type-images/' . $slug . '/' . $file;
+                    $pool[] = 'assets/type-images/'.$slug.'/'.$file;
                 }
             }
 
             if ($pool === []) {
                 foreach (['jpg', 'jpeg', 'png', 'webp'] as $extension) {
-                    $legacy = storage_path('app/public/assets/type-images/' . $slug . '.' . $extension);
+                    $legacy = storage_path('app/public/assets/type-images/'.$slug.'.'.$extension);
 
                     if (is_file($legacy)) {
-                        $pool[] = 'assets/type-images/' . $slug . '.' . $extension;
+                        $pool[] = 'assets/type-images/'.$slug.'.'.$extension;
                     }
                 }
             }
@@ -527,8 +533,7 @@ class SeedRealisticDemoAssets extends Command
         if (in_array($assetType, $specialised, true) && random_int(1, 100) <= 65) {
             $preferred = array_values(array_filter(
                 $units,
-                fn ($unit) =>
-                    str_contains(Str::upper((string) $unit->unit_abbreviation), 'ICT')
+                fn ($unit) => str_contains(Str::upper((string) $unit->unit_abbreviation), 'ICT')
                     || str_contains(Str::lower((string) $unit->name), 'ict')
                     || str_contains(Str::lower((string) $unit->name), 'digital')
             ));
@@ -658,6 +663,7 @@ class SeedRealisticDemoAssets extends Command
     {
         if ((string) $this->option('remove-confirm') !== 'REMOVE-DEMO') {
             $this->error('Removal blocked: --remove-confirm=REMOVE-DEMO is required.');
+
             return self::FAILURE;
         }
 
@@ -668,6 +674,7 @@ class SeedRealisticDemoAssets extends Command
 
         if ($count === 0) {
             $this->info('No active realistic demo records remain.');
+
             return self::SUCCESS;
         }
 

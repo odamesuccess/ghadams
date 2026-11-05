@@ -5,6 +5,7 @@ namespace App\Services\DemoData;
 use App\Models\Asset;
 use App\Models\AssetTransfer;
 use App\Models\User;
+use App\Services\AssetCodeGenerator;
 use App\Services\DemoAssetQrService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -217,7 +218,6 @@ class SyntheticDatasetWriter
         $problems = [];
 
         foreach ([
-            ['assets', 'asset_code', array_column($plan['assets'], 'asset_code'), $ownedAssets],
             ['assets', 'serial_number', array_column($plan['assets'], 'serial_number'), $ownedAssets],
             ['users', 'email', array_column($plan['users'], 'email'), $ownedUsers],
         ] as [$table, $column, $values, $ownedIds]) {
@@ -356,6 +356,11 @@ class SyntheticDatasetWriter
             }
 
             foreach ($plan['assets'] as $index => $asset) {
+                // Official GES code, numbered after everything already inserted.
+                $asset['asset_code'] = $plan['assets'][$index]['asset_code'] = $this->officialCode(
+                    $asset['type'], (int) $asset['initial_unit_id'], $asset['purchase_date']
+                );
+
                 $assetIds[$index] = DB::table('assets')->insertGetId($this->only('assets', $legacy + [
                     'uuid' => (string) Str::uuid(),
                     'scan_token' => (string) Str::uuid(),
@@ -583,6 +588,146 @@ class SyntheticDatasetWriter
         if (class_exists(PermissionRegistrar::class)) {
             app(PermissionRegistrar::class)->forgetCachedPermissions();
         }
+    }
+
+    /* =========================================================
+       ASSET CODES
+    ========================================================= */
+
+    /** @var array<int, object> */
+    private array $unitCache = [];
+
+    /** The official GES code for an asset registered in this unit on this date. */
+    private function officialCode(string $typeAbbreviation, int $unitId, string $purchaseDate, array $excludeAssetIds = []): string
+    {
+        $unit = $this->unitCache[$unitId] ??= DB::table('units')->find($unitId)
+            ?? throw new RuntimeException("Unit {$unitId} not found.");
+
+        return AssetCodeGenerator::generate(
+            $typeAbbreviation,
+            (string) $unit->location_abbreviation,
+            $purchaseDate,
+            (string) $unit->unit_abbreviation,
+            $unitId,
+            $excludeAssetIds,
+        );
+    }
+
+    /**
+     * Give the dataset's own assets official GES codes, in purchase-date order, keeping each
+     * asset's id, UUID and scan token. Only rows listed in the registry are touched; codes of
+     * every other asset are left exactly as they are. Audit-log text that quotes an old code
+     * is updated too. Returns [asset id => [old, new]] (planned only, unless $apply).
+     *
+     * @return array<int, array{0: string, 1: string}>
+     */
+    public function recodeAssets(bool $apply): array
+    {
+        $ids = $this->ownedIds('asset');
+
+        if ($ids === []) {
+            throw new RuntimeException('No synthetic assets found to recode.');
+        }
+
+        $changes = [];
+
+        // A preview runs the same writes and rolls them back, so it shows exactly the codes
+        // a real run would assign.
+        DB::beginTransaction();
+
+        try {
+            $initialUnits = DB::table(self::REGISTRY)
+                ->where('dataset', $this->dataset())
+                ->where('record_type', 'asset')
+                ->pluck('meta', 'record_id')
+                ->map(fn ($meta) => (int) (json_decode((string) $meta, true)['initial_unit_id'] ?? 0));
+
+            $assets = DB::table('assets')
+                ->join('asset_names', 'asset_names.id', '=', 'assets.assetname_id')
+                ->whereIn('assets.id', $ids)
+                ->orderBy('assets.purchase_date')
+                ->orderBy('assets.id')
+                ->lockForUpdate()
+                ->get(['assets.id', 'assets.asset_code', 'assets.unit_id', 'assets.purchase_date', 'asset_names.assetname_abbreviation']);
+
+            // Park the current codes first, so no new code clashes with one still held by a
+            // synthetic asset (the same two-pass approach as assets:rebuild-codes).
+            foreach ($assets as $asset) {
+                DB::table('assets')->where('id', $asset->id)->update(['asset_code' => '__GHANADAMS_RECODE_'.$asset->id.'__']);
+            }
+
+            // Assets not yet recoded are left out of the numbering.
+            $pending = array_fill_keys($ids, true);
+
+            foreach ($assets as $asset) {
+                unset($pending[$asset->id]);
+                $unitId = $initialUnits[$asset->id] ?: (int) $asset->unit_id;
+
+                $code = $this->officialCode(
+                    (string) $asset->assetname_abbreviation,
+                    $unitId,
+                    (string) $asset->purchase_date,
+                    [...array_keys($pending), (int) $asset->id],
+                );
+
+                $changes[$asset->id] = [$asset->asset_code, $code];
+                DB::table('assets')->where('id', $asset->id)->update(['asset_code' => $code]);
+            }
+
+            if ($apply) {
+                foreach (array_chunk($this->ownedIds('audit_log'), self::CHUNK) as $chunk) {
+                    foreach (DB::table('audit_logs')->whereIn('id', $chunk)
+                        ->where('auditable_type', Asset::class)
+                        ->whereIn('auditable_id', array_keys($changes))
+                        ->get(['id', 'auditable_id', 'description']) as $log) {
+                        [$old, $new] = $changes[$log->auditable_id];
+
+                        if (str_contains((string) $log->description, $old)) {
+                            DB::table('audit_logs')->where('id', $log->id)
+                                ->update(['description' => str_replace($old, $new, (string) $log->description)]);
+                        }
+                    }
+                }
+            }
+
+            $apply ? DB::commit() : DB::rollBack();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
+        }
+
+        if ($apply) {
+            $this->recodeInvoicePdfs($changes);
+        }
+
+        return $changes;
+    }
+
+    /** Synthetic invoice PDFs print the asset code: swap in the new one. Returns files changed. */
+    private function recodeInvoicePdfs(array $changes): int
+    {
+        $disk = Storage::disk('local');
+        $updated = 0;
+
+        foreach (array_chunk($this->ownedIds('maintenance_request'), self::CHUNK) as $chunk) {
+            foreach (DB::table('maintenance_requests')->whereIn('id', $chunk)
+                ->whereNotNull('invoice_pdf_path')->get(['asset_id', 'invoice_pdf_path']) as $job) {
+                if (! isset($changes[$job->asset_id]) || ! $disk->exists($job->invoice_pdf_path)) {
+                    continue;
+                }
+
+                [$old, $new] = $changes[$job->asset_id];
+                $pdf = SyntheticInvoicePdf::replaceAssetCode((string) $disk->get($job->invoice_pdf_path), $old, $new);
+
+                if ($pdf !== null) {
+                    $disk->put($job->invoice_pdf_path, $pdf);
+                    $updated++;
+                }
+            }
+        }
+
+        return $updated;
     }
 
     /* =========================================================

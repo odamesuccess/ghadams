@@ -19,6 +19,7 @@ class SyntheticDemoDataset extends Command
                             {--execute : Write the dataset (without this the command is a dry run)}
                             {--replace : Remove the previously generated synthetic rows first, then regenerate}
                             {--remove : Remove only the rows this dataset created}
+                            {--recode : Give the existing synthetic assets official GES codes in place (preview unless --confirm is given)}
                             {--confirm= : Safety token, must be '.self::CONFIRM.' for --execute/--replace/--remove}
                             {--verify : Run the integrity checks and write the reports}
                             {--skip-media : Do not generate QR images}
@@ -66,6 +67,10 @@ class SyntheticDemoDataset extends Command
             $this->error('Writing requires --confirm='.self::CONFIRM);
 
             return self::FAILURE;
+        }
+
+        if ($this->option('recode')) {
+            return $this->recode($writer, $safety['allowed'] && $this->option('confirm') === self::CONFIRM);
         }
 
         $this->baseline('Current record counts');
@@ -164,6 +169,51 @@ class SyntheticDemoDataset extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Recode only the dataset's own assets (registry-listed) with AssetCodeGenerator.
+     * Ids, UUIDs and scan tokens are kept; every other asset's code is untouched.
+     */
+    private function recode(SyntheticDatasetWriter $writer, bool $apply): int
+    {
+        // Snapshot every other asset's code (soft-deleted included) to prove nothing else moved.
+        $ids = $writer->ownedIds('asset');
+        $others = fn () => DB::table('assets')->whereNotIn('id', $ids)->orderBy('id')->pluck('asset_code', 'id');
+        $before = $others();
+
+        try {
+            $changes = $writer->recodeAssets($apply);
+        } catch (Throwable $e) {
+            $this->error('No codes changed: '.$e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $this->table(['Asset ID', 'Old code', 'New code'], collect($changes)->take(15)
+            ->map(fn ($c, $id) => [$id, $c[0], $c[1]])->values()->all());
+
+        if (! $apply) {
+            $this->warn(count($changes).' synthetic asset codes previewed. DRY RUN: nothing was written.');
+            $this->line('To apply: php artisan demo:synthetic-dataset --recode --confirm='.self::CONFIRM);
+
+            return self::SUCCESS;
+        }
+
+        if ($before->all() !== $others()->all()) {
+            $this->error('Codes of non-synthetic assets changed. This should never happen; check the database.');
+
+            return self::FAILURE;
+        }
+
+        $this->info(count($changes).' synthetic asset codes recoded; '.$before->count().' other asset codes unchanged.');
+
+        if (! $this->option('skip-media')) {
+            $this->info('Regenerating QR labels with the new codes...');
+            $writer->generateQrCodes(fn ($stage, $n) => $n % 500 === 0 ? $this->line("  {$stage}: {$n}") : null);
+        }
+
+        return $this->verify();
+    }
+
     private function verify(): int
     {
         $verifier = SyntheticDatasetVerifier::make();
@@ -221,7 +271,7 @@ class SyntheticDemoDataset extends Command
         if ($sample > 0) {
             $this->table(['Asset code', 'Type', 'Brand / model', 'Purchased', 'GHS', 'Unit', 'Status'],
                 collect($plan['assets'])->filter(fn ($a, $i) => $i % (int) max(1, floor(2000 / $sample)) === 0)->take($sample)
-                    ->map(fn ($a) => [$a['asset_code'], $a['type_name'], trim($a['brand'].' '.$a['model_number']), $a['purchase_date'], number_format($a['purchase_cost'], 2), $a['unit'], $a['status']])
+                    ->map(fn ($a) => [$a['asset_code'] ?? '(assigned on write)', $a['type_name'], trim($a['brand'].' '.$a['model_number']), $a['purchase_date'], number_format($a['purchase_cost'], 2), $a['unit'], $a['status']])
                     ->values()->all());
         }
     }

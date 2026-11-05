@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Asset;
+use App\Services\AssetCodeGenerator;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +39,7 @@ class RebuildAssetCodes extends Command
                 foreach ($live as $asset) {
                     $unit = $units->get($asset->unit_id);
                     $name = $names->get($asset->assetname_id);
-                    if (!$unit || !$name || !$asset->purchase_date) {
+                    if (! $unit || ! $name || ! $asset->purchase_date) {
                         throw new RuntimeException("Asset {$asset->id} has a missing unit, type or purchase date.");
                     }
 
@@ -57,7 +58,7 @@ class RebuildAssetCodes extends Command
                     $typeKey = implode('|', [$asset->unit_id, $typeAbbr, $year]);
                     $quantity = $locationCounts[$locationKey] = ($locationCounts[$locationKey] ?? 0) + 1;
                     $typeNumber = $typeCounts[$typeKey] = ($typeCounts[$typeKey] ?? 0) + 1;
-                    $code = sprintf('GES\\%s\\%s\\%s\\%d\\%d\\%02d',
+                    $code = AssetCodeGenerator::format(
                         $unitAbbr, $locationAbbr, $typeAbbr, $quantity, $year, $typeNumber);
 
                     if (strlen($code) > 255 || isset($codes[strtolower($code)]) ||
@@ -71,7 +72,7 @@ class RebuildAssetCodes extends Command
                 if ($apply) {
                     // Two passes avoid unique-key clashes with codes still held by other rows.
                     foreach ($changes as $row) {
-                        $temporary = '__GHANADAMS_RECODE_' . $row['id'] . '__';
+                        $temporary = '__GHANADAMS_RECODE_'.$row['id'].'__';
                         if (isset($codes[strtolower($temporary)]) ||
                             $assets->contains(fn (Asset $a) => strcasecmp($a->asset_code, $temporary) === 0)) {
                             throw new RuntimeException("Temporary code already exists: {$temporary}");
@@ -91,15 +92,17 @@ class RebuildAssetCodes extends Command
             $rows = $result['rows'];
             $this->table(['Asset ID', 'Old code', 'New code'],
                 array_map(fn ($row) => array_values($row), array_slice($rows, 0, 10)));
-            $this->info(count($rows) . ' active asset codes ' .
+            $this->info(count($rows).' active asset codes '.
                 ($apply ? 'rebuilt.' : 'ready to rebuild (preview only).'));
             if ($result['archived']) {
-                $this->warn($result['archived'] . ' soft-deleted assets were left unchanged.');
+                $this->warn($result['archived'].' soft-deleted assets were left unchanged.');
             }
             $this->warn('QR files still contain the old code. Regenerate them in Part 3.');
+
             return self::SUCCESS;
         } catch (\Throwable $e) {
-            $this->error('No codes committed: ' . $e->getMessage());
+            $this->error('No codes committed: '.$e->getMessage());
+
             return self::FAILURE;
         }
     }
