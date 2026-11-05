@@ -58,11 +58,12 @@ class AssetResearchService
             throw AssetResearchException::unsupported('AI research is not available for this asset type.');
         }
 
-        if (blank($asset->model_number) && blank($asset->part_number)) {
-            throw AssetResearchException::unsupported('Add a model number or part number before running AI research.');
+        if (! $this->hasIdentifiers($asset)) {
+            throw AssetResearchException::unsupported('Add a brand, model number or part number before running AI research.');
         }
 
-        $flags = [];
+        // Without a model or part number the AI can only find comparable products.
+        $flags = $this->hasModelOrPart($asset) ? [] : ['no_model_number'];
         $sources = [];
         $specPart = null;
         $baseline = null;
@@ -74,7 +75,7 @@ class AssetResearchService
                 // Another asset with the same brand + model already has human-approved specs.
                 $specPart = [
                     'model' => $asset->model_number,
-                    'manufacturer' => $asset->brand,
+                    'manufacturer' => $this->brandFor($asset),
                     'confidence' => 'high',
                     'variants' => [],
                     'specifications' => $this->normalizeSpecifications((array) $baseline->specifications, $category),
@@ -142,6 +143,29 @@ class AssetResearchService
         $category = $mapped[$abbreviation] ?? config('asset_research.default_category');
 
         return is_string($category) && $this->specSchema($category) ? $category : null;
+    }
+
+    /**
+     * The asset's brand, falling back to the asset type's default brand.
+     */
+    public function brandFor(Asset $asset): ?string
+    {
+        $brand = filled($asset->brand) ? $asset->brand : $asset->assetName?->brand;
+
+        return filled($brand) ? trim($brand) : null;
+    }
+
+    public function hasModelOrPart(Asset $asset): bool
+    {
+        return filled($asset->model_number) || filled($asset->part_number);
+    }
+
+    /**
+     * Research needs at least a brand, model number or part number (the asset type is always known).
+     */
+    public function hasIdentifiers(Asset $asset): bool
+    {
+        return $this->hasModelOrPart($asset) || filled($this->brandFor($asset));
     }
 
     /**
@@ -297,7 +321,8 @@ class AssetResearchService
 
         Accuracy:
         - Use null for any value you could not confirm from a source. Do not guess or fill in typical values.
-        - Identify the product from the model number and part number. If they match more than one product or configuration (for example different CPU, RAM or regional SKUs), do not pick one: set "confidence" to "low", list the candidates in "variants", and fill only the specifications shared by all of them.
+        - Identify the product from the asset type, brand, model number and part number. If they match more than one product or configuration (for example different CPU, RAM or regional SKUs), do not pick one: set "confidence" to "low", list the candidates in "variants", and fill only the specifications shared by all of them.
+        - If no model or part number is given, the exact product cannot be known. Search for this brand's products of this asset type, set "confidence" to "low", leave "model" null, list the most common current candidates in "variants", and fill only the specifications they all share (often very few). Say so in "notes".
         - Prefer the manufacturer's official product page or datasheet. Use retailer or review pages only when the manufacturer has nothing, and say so in that source's note.
         - Number fields must be JSON numbers in the unit named by the field (ram_gb in gigabytes, weight_kg in kilograms, read_speed_mbps in megabytes per second). Boolean fields must be true or false.
         - List every page you relied on in "sources".
@@ -407,7 +432,8 @@ class AssetResearchService
 
         Rules:
         - List each price you found as a separate offer, with the exact URL of the page that shows it. An offer without a URL will be discarded.
-        - Only include listings for this exact product (same model or part number). Skip bundles, accessories, spare parts and similar models.
+        - When a model or part number is given, only include listings for this exact product (same model or part number). Skip bundles, accessories, spare parts and similar models.
+        - When no model or part number is given, include listings for this brand's products of this asset type, preferring common mid-range models. Skip accessories and spare parts, and say in "notes" that these are comparable products, not an exact match.
         - Report the amount and currency exactly as listed. Do not convert currencies.
         - Never estimate or guess a price. If you find no reliable listing, return an empty "offers" list.
 
@@ -788,15 +814,22 @@ class AssetResearchService
         $identity = array_filter([
             'asset_type' => $asset->assetName?->assetname,
             'category' => $category,
-            'brand' => $asset->brand,
+            'brand' => $this->brandFor($asset),
             'model_number' => $asset->model_number,
             'part_number' => $asset->part_number,
-            'serial_number' => $asset->serial_number,
+            // Placeholder serials ("N/A") are not useful to search for.
+            'serial_number' => in_array(mb_strtolower(trim((string) $asset->serial_number)), ['n/a', 'na', '-', 'none'], true)
+                ? null
+                : $asset->serial_number,
         ], fn ($value) => filled($value));
+
+        $note = $this->hasModelOrPart($asset)
+            ? ''
+            : "\n\nNo model or part number is recorded for this asset. Work from the asset type and brand.";
 
         return "Asset to research:\n<asset>\n"
             .json_encode($identity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
-            ."\n</asset>";
+            ."\n</asset>".$note;
     }
 
     protected function mergeSources(array ...$lists): array
@@ -819,7 +852,7 @@ class AssetResearchService
             ->sortBy(fn ($level) => self::CONFIDENCE_RANK[$level])
             ->first() ?? 'low';
 
-        if (array_intersect($flags, ['implausible_price', 'ambiguous_model', 'mixed_currencies'])) {
+        if (array_intersect($flags, ['implausible_price', 'ambiguous_model', 'mixed_currencies', 'no_model_number'])) {
             return 'low';
         }
 

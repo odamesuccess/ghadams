@@ -227,6 +227,10 @@ const FLAG_LABELS: Record<string, { text: string; tone: 'warn' | 'info' }> = {
         text: 'Model number matches several products',
         tone: 'warn',
     },
+    no_model_number: {
+        text: 'No model number: based on type and brand only',
+        tone: 'warn',
+    },
     no_price_found: { text: 'No price found', tone: 'info' },
     specs_reused: {
         text: 'Specs reused from an approved asset with the same model',

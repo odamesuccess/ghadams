@@ -188,17 +188,38 @@ test('research is limited to assets in the user\'s own unit', function () {
     Queue::assertNothingPushed();
 });
 
-test('research needs a model or part number', function () {
+test('research runs on asset type and brand when there is no model or part number', function () {
     Queue::fake();
     $user = researchUser(['assets.research']);
     $asset = researchAsset($user, ['model_number' => null, 'part_number' => null]);
 
     $this->actingAs($user)
         ->postJson(route('assets.research', $asset))
+        ->assertAccepted();
+
+    Queue::assertPushed(ResearchAssetJob::class);
+});
+
+test('research needs at least a brand, model or part number', function () {
+    Queue::fake();
+    $user = researchUser(['assets.research']);
+    $asset = researchAsset($user, ['brand' => null, 'model_number' => null, 'part_number' => null]);
+    $asset->assetName->update(['brand' => '']);
+
+    $this->actingAs($user)
+        ->postJson(route('assets.research', $asset))
         ->assertUnprocessable()
-        ->assertJsonValidationErrors('model_number');
+        ->assertJsonValidationErrors('brand');
 
     Queue::assertNothingPushed();
+});
+
+test('the asset type brand is used when the asset has no brand', function () {
+    $user = researchUser([]);
+    $asset = researchAsset($user, ['brand' => null]);
+    $asset->assetName->update(['brand' => 'Lenovo']);
+
+    expect(app(\App\Services\AssetResearchService::class)->brandFor($asset->fresh('assetName')))->toBe('Lenovo');
 });
 
 test('every asset type gets a spec category', function (string $type, string $category) {
@@ -304,6 +325,31 @@ test('the job stores a pending suggestion and does not change the asset', functi
 
     Http::assertSent(fn ($request) => $request->hasHeader('x-api-key', 'test-key')
         && $request['tools'][0]['type'] === 'web_search_20260209');
+});
+
+test('research without a model number is flagged and marked low confidence', function () {
+    Http::fake(['api.anthropic.com/*' => Http::sequence()
+        ->push(claudeResponse(specAnswer(['model' => null, 'variants' => ['ProBook 450 G9', 'EliteBook 840 G8']]), ['https://www.hp.com/elitebook-840-g8']))
+        ->push(claudeResponse(priceAnswer([
+            ['amount' => 900, 'currency' => 'USD', 'condition' => 'new', 'seller' => 'Shop A', 'url' => 'https://shop-a.example/hp-laptop'],
+        ]), ['https://shop-a.example/hp-laptop'])),
+    ]);
+
+    $user = researchUser(['assets.research']);
+    $asset = researchAsset($user, ['model_number' => null, 'part_number' => null, 'serial_number' => 'N/A']);
+
+    ResearchAssetJob::dispatchSync($asset->id, 'full', $user->id);
+
+    $suggestion = AssetSuggestion::sole();
+
+    expect($suggestion->error_message)->toBeNull()
+        ->and($suggestion->confidence)->toBe('low')
+        ->and($suggestion->payload['flags'])->toContain('no_model_number');
+
+    Http::assertSent(fn ($request) => str_contains($request['messages'][0]['content'], '"brand": "HP"')
+        && str_contains($request['messages'][0]['content'], 'Laptop Computer')
+        && str_contains($request['messages'][0]['content'], 'No model or part number is recorded')
+        && ! str_contains($request['messages'][0]['content'], 'serial_number'));
 });
 
 test('a refusal is stored as a failed suggestion', function () {

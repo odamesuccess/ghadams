@@ -90,7 +90,7 @@ const cards: { key: StatusFilter; label: string; tone: string }[] = [
     },
     {
         key: 'missing_ids',
-        label: 'Missing model / part no.',
+        label: 'No model / part no.',
         tone: 'border-indigo-400/20 bg-indigo-500/10 text-indigo-200',
     },
 ];
@@ -369,8 +369,9 @@ const formatDate = (value: string | null) =>
                                             !row.model_number &&
                                             !row.part_number
                                         "
-                                        class="ml-2 rounded-full border border-indigo-700 bg-indigo-900/30 px-2 py-0.5 text-[11px] text-indigo-200"
-                                        >Needs model no.</span
+                                        class="ml-2 rounded-full border border-slate-700 bg-slate-800/60 px-2 py-0.5 text-[11px] text-slate-300"
+                                        title="AI research will use the type and brand only"
+                                        >No model no.</span
                                     >
                                 </td>
                                 <td class="px-3 py-2 text-slate-300">
@@ -431,9 +432,12 @@ const formatDate = (value: string | null) =>
                                         <p
                                             class="basis-full text-xs text-slate-500"
                                         >
-                                            The AI searches using the saved
-                                            model and part number. Save them
-                                            before running research.
+                                            The AI searches using the asset
+                                            type, brand and these numbers.
+                                            They're optional, but a saved model
+                                            or part number gives an exact
+                                            match instead of comparable
+                                            products.
                                         </p>
                                     </form>
 

@@ -284,11 +284,12 @@ const statusClass = (s: AssetSuggestion) =>
                     "
                     class="text-sm text-slate-400"
                 >
-                    No AI suggestions yet. Make sure the model number or part
-                    number is saved, then use
+                    No AI suggestions yet. Use
                     <span class="font-medium text-slate-200"
                         >Auto-fill with AI</span
-                    >.
+                    >
+                    to look this asset up by its type and brand. Saving a model
+                    or part number first gives an exact match.
                 </p>
 
                 <!-- History -->

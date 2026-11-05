@@ -31,14 +31,16 @@ class ResearchAssetRequest extends FormRequest
                 /** @var Asset $asset */
                 $asset = $this->route('asset');
 
-                if (! app(AssetResearchService::class)->categoryFor($asset)) {
+                $research = app(AssetResearchService::class);
+
+                if (! $research->categoryFor($asset)) {
                     $validator->errors()->add('asset', 'AI research is not available for this asset type.');
 
                     return;
                 }
 
-                if (blank($asset->model_number) && blank($asset->part_number)) {
-                    $validator->errors()->add('model_number', 'Add a model number or part number before running AI research.');
+                if (! $research->hasIdentifiers($asset)) {
+                    $validator->errors()->add('brand', 'Add a brand, model number or part number before running AI research.');
                 }
             },
         ];
