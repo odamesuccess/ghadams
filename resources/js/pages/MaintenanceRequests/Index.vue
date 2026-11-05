@@ -440,7 +440,7 @@ const destroyRecord = async (request: any) => {
 }
 
 const fmt = (v?: string) => {
-  if (!v) return 'â€”'
+  if (!v) return '—'
 
   try {
     return new Date(v).toLocaleString('en-GB', {
@@ -456,7 +456,7 @@ const fmt = (v?: string) => {
 }
 
 const money = (value?: string | number | null) => {
-  if (value === null || value === undefined || value === '') return 'â€”'
+  if (value === null || value === undefined || value === '') return '—'
 
   const amount = Number(value)
   if (Number.isNaN(amount)) return value
@@ -526,12 +526,12 @@ const paymentClass = (status?: string | null) => {
 
         <div class="grid gap-2 sm:grid-cols-2">
           <div class="rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-3">
-            <p class="text-[10px] font-bold uppercase tracking-wider text-purple-300">Step 1 Â· Job Created</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-purple-300">Step 1 · Job Created</p>
             <p class="mt-1 text-sm font-semibold text-white">Job Status: In Progress</p>
             <p class="mt-1 text-xs text-slate-400">The asset is automatically marked Under Maintenance.</p>
           </div>
           <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
-            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Step 2 Â· Work Done</p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Step 2 · Work Done</p>
             <p class="mt-1 text-sm font-semibold text-white">Head marks the job Completed</p>
             <p class="mt-1 text-xs text-slate-400">Only then does it enter Accounts Payment and Maintenance Cost History.</p>
           </div>
@@ -660,7 +660,7 @@ const paymentClass = (status?: string | null) => {
                         >
                           {{ asset.unit_name ?? 'No unit' }}
                           <span v-if="asset.location_name">
-                            Â· {{ asset.location_name }}
+                            · {{ asset.location_name }}
                           </span>
                         </div>
                       </div>
@@ -838,7 +838,7 @@ const paymentClass = (status?: string | null) => {
               <tbody class="divide-y divide-slate-800 bg-slate-950">
                 <tr v-for="r in maintenanceRequests?.data ?? []" :key="r.id" class="transition hover:bg-slate-900/70">
                   <td class="whitespace-nowrap px-3 py-2.5 text-slate-300">{{ fmt(r.created_at) }}</td>
-                  <td class="whitespace-nowrap px-3 py-2.5 font-medium text-white">{{ r.asset?.asset_code ?? 'â€”' }}</td>
+                  <td class="whitespace-nowrap px-3 py-2.5 font-medium text-white">{{ r.asset?.asset_code ?? '—' }}</td>
                   <td class="max-w-[320px] truncate px-3 py-2.5 text-slate-300">{{ r.fault_description }}</td>
                   <td class="px-3 py-2.5">
                     <span class="rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1" :class="priorityClass(r.priority)">{{ r.priority }}</span>
@@ -846,7 +846,7 @@ const paymentClass = (status?: string | null) => {
                   <td class="px-3 py-2.5">
                     <span class="rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1" :class="statusClass(r.status)">{{ String(r.status).replaceAll('_', ' ') }}</span>
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2.5 text-slate-300">{{ r.maintenance_provider?.providername ?? 'â€”' }}</td>
+                  <td class="whitespace-nowrap px-3 py-2.5 text-slate-300">{{ r.maintenance_provider?.providername ?? '—' }}</td>
                   <td class="whitespace-nowrap px-4 py-3">
                     <span
                       v-if="r.status === 'completed'"
@@ -899,7 +899,7 @@ const paymentClass = (status?: string | null) => {
     {{
       r.invoice_pdf_path
         ? 'Completed'
-        : 'Completed â€” Invoice Required'
+        : 'Completed — Invoice Required'
     }}
   </option>
 </select>
@@ -921,7 +921,7 @@ const paymentClass = (status?: string | null) => {
                         v-if="!canEditJob(r)"
                         class="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1.5 text-[11px] font-semibold text-emerald-300"
                         title="Payment has been completed. This maintenance job is locked against further editing."
-                      >Paid Â· Locked</span>
+                      >Paid · Locked</span>
                     </div>
                   </td>
                 </tr>
@@ -980,7 +980,7 @@ const paymentClass = (status?: string | null) => {
               Mark Maintenance Job Completed
             </h2>
             <p class="mt-1 text-xs leading-5 text-slate-400">
-              {{ completionTarget?.asset?.asset_code ?? 'Asset' }} Â·
+              {{ completionTarget?.asset?.asset_code ?? 'Asset' }} ·
               {{ completionTarget?.fault_description ?? 'Maintenance job' }}
             </p>
           </div>
@@ -997,7 +997,7 @@ const paymentClass = (status?: string | null) => {
         <div class="mt-5 grid gap-4 sm:grid-cols-2">
           <label class="block">
             <span class="mb-1 block text-xs font-semibold text-slate-300">
-              Actual Maintenance Cost (GHâ‚µ)
+              Actual Maintenance Cost (GH₵)
             </span>
             <input
               v-model="completionForm.actual_cost"

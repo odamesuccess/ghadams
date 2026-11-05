@@ -143,7 +143,7 @@ const resetFilters = () => {
 }
 
 const fmt = (v?: string) => {
-  if (!v) return 'â€”'
+  if (!v) return '—'
 
   try {
     return new Date(v).toLocaleString('en-GB', {
@@ -159,7 +159,7 @@ const fmt = (v?: string) => {
 }
 
 const fmtDraftDate = (value?: string) => {
-  if (!value) return 'â€”'
+  if (!value) return '—'
 
   try {
     return new Date(value).toLocaleString('en-GB', {
@@ -175,7 +175,7 @@ const fmtDraftDate = (value?: string) => {
 }
 
 const money = (value?: string | number | null) => {
-  if (value === null || value === undefined || value === '') return 'â€”'
+  if (value === null || value === undefined || value === '') return '—'
 
   const amount = Number(value)
 
@@ -418,7 +418,7 @@ const totalPayable = computed(() => {
                   </td>
 
                   <td class="whitespace-nowrap px-4 py-3 font-medium text-white">
-                    {{ r.asset?.asset_code ?? 'â€”' }}
+                    {{ r.asset?.asset_code ?? '—' }}
                   </td>
 
                   <td class="max-w-md truncate px-4 py-3 text-slate-300">
@@ -444,7 +444,7 @@ const totalPayable = computed(() => {
                   </td>
 
                   <td class="whitespace-nowrap px-4 py-3 text-slate-300">
-                    {{ r.maintenance_provider?.providername ?? 'â€”' }}
+                    {{ r.maintenance_provider?.providername ?? '—' }}
                   </td>
 
                   <td class="whitespace-nowrap px-4 py-3">

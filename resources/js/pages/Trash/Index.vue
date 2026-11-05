@@ -124,8 +124,8 @@ const forceDeleteItem = async (id: number, label: string) => {
 
               <tr v-for="item in items.data" :key="item.id" class="hover:bg-slate-900/50">
                 <td class="px-4 py-3 font-medium">{{ item.label }}</td>
-                <td class="px-4 py-3 text-slate-400">{{ item.deleted_at ?? 'â€”' }}</td>
-                <td class="px-4 py-3 text-slate-400">{{ item.created_at ?? 'â€”' }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ item.deleted_at ?? '—' }}</td>
+                <td class="px-4 py-3 text-slate-400">{{ item.created_at ?? '—' }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end gap-2">
                     <button

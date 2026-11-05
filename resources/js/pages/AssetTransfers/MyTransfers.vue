@@ -58,12 +58,12 @@ const cancelTransfer = async (id: number) => {
 
 const assetLabel = (asset: any) => {
     const name = asset.asset_name?.assetname ?? asset.assetName?.assetname ?? 'Asset'
-    const code = asset.asset_code ? ` â€¢ ${asset.asset_code}` : ''
-    const unit = asset.unit?.name ? ` â€¢ Current: ${asset.unit.name}` : ''
+    const code = asset.asset_code ? ` • ${asset.asset_code}` : ''
+    const unit = asset.unit?.name ? ` • Current: ${asset.unit.name}` : ''
     return `${name}${code}${unit}`
 }
 
-const fmt = (value?: string) => value ? new Date(value).toLocaleString('en-GB') : 'â€”'
+const fmt = (value?: string) => value ? new Date(value).toLocaleString('en-GB') : '—'
 </script>
 
 <template>
@@ -163,12 +163,12 @@ const fmt = (value?: string) => value ? new Date(value).toLocaleString('en-GB') 
                             <td class="px-3 py-2">
                                 <div class="font-mono text-xs text-slate-400">{{ transfer.transfer_code }}</div>
                                 <div class="font-medium text-white">{{ transfer.asset?.asset_name?.assetname ?? transfer.asset?.assetName?.assetname ?? 'Asset' }}</div>
-                                <div class="text-xs text-slate-500">{{ transfer.asset?.asset_code ?? 'â€”' }}</div>
+                                <div class="text-xs text-slate-500">{{ transfer.asset?.asset_code ?? '—' }}</div>
                             </td>
                             <td class="px-3 py-2">
                                 <div>{{ transfer.from_unit?.name ?? transfer.fromUnit?.name ?? 'Unassigned' }}</div>
                                 <div class="text-xs text-slate-500">to</div>
-                                <div class="font-semibold text-white">{{ transfer.to_unit?.name ?? transfer.toUnit?.name ?? 'â€”' }}</div>
+                                <div class="font-semibold text-white">{{ transfer.to_unit?.name ?? transfer.toUnit?.name ?? '—' }}</div>
                             </td>
                             <td class="max-w-sm px-3 py-2 text-slate-300">{{ transfer.reason }}</td>
                             <td class="px-3 py-2">

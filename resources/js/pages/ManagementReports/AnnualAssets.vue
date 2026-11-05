@@ -104,7 +104,7 @@ const money=(v:number|string|null|undefined)=>
     .format(Number(v??0))
 
 const date=(v:string|null|undefined)=>
-  v?new Date(`${v}T00:00:00`).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'â€”'
+  v?new Date(`${v}T00:00:00`).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—'
 
 const statusClass=(status:string)=>({
   active:'gh-badge gh-badge-success',
@@ -154,7 +154,7 @@ const statusClass=(status:string)=>({
 
       <div class="gh-period-line">
         Reporting year: <strong>{{ filters.year }}</strong>
-        <span class="gh-separator">â€¢</span>
+        <span class="gh-separator">•</span>
         Book-value date: <strong>{{ valuationDate }}</strong>
       </div>
 
@@ -162,7 +162,7 @@ const statusClass=(status:string)=>({
         <article class="gh-summary-card"><span>Total Assets</span><strong>{{ summary.total_assets.toLocaleString() }}</strong><small>Register records in scope</small></article>
         <article class="gh-summary-card"><span>Active</span><strong>{{ summary.active.toLocaleString() }}</strong><small>Current stored status</small></article>
         <article class="gh-summary-card"><span>Under Maintenance</span><strong>{{ summary.under_maintenance.toLocaleString() }}</strong><small>Current stored status</small></article>
-        <article class="gh-summary-card"><span>Obsolete / Disposed</span><strong>{{ (summary.obsolete + summary.disposed).toLocaleString() }}</strong><small>{{ summary.obsolete }} obsolete Â· {{ summary.disposed }} disposed</small></article>
+        <article class="gh-summary-card"><span>Obsolete / Disposed</span><strong>{{ (summary.obsolete + summary.disposed).toLocaleString() }}</strong><small>{{ summary.obsolete }} obsolete · {{ summary.disposed }} disposed</small></article>
         <article class="gh-summary-card"><span>Acquisition Cost</span><strong>{{ money(summary.acquisition_cost) }}</strong><small>Historical purchase cost</small></article>
         <article class="gh-summary-card"><span>Estimated Book Value</span><strong>{{ money(summary.book_value) }}</strong><small>Straight-line, 10% residual</small></article>
         <article class="gh-summary-card"><span>Maintenance Cost</span><strong>{{ money(summary.maintenance_cost) }}</strong><small>Completed jobs in {{ filters.year }}</small></article>
@@ -210,7 +210,7 @@ const statusClass=(status:string)=>({
         </div>
 
         <div class="gh-pagination">
-          <span>Showing {{ assets.from ?? 0 }}â€“{{ assets.to ?? 0 }} of {{ assets.total }}</span>
+          <span>Showing {{ assets.from ?? 0 }}–{{ assets.to ?? 0 }} of {{ assets.total }}</span>
           <div>
             <button class="gh-btn gh-btn-secondary" :disabled="assets.current_page<=1" @click="goPage(assets.current_page-1)">Previous</button>
             <span class="gh-page-number">{{ assets.current_page }} / {{ assets.last_page }}</span>

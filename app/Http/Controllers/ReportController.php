@@ -799,8 +799,8 @@ class ReportController extends Controller
             [
                 'data'        => $data,
                 'grandTotal'  => $grandTotal,
-                'generatedAt' => now(),                 // âœ… REQUIRED
-                'currentuser' => Auth::user()->name ?? 'System', // âœ… REQUIRED
+                'generatedAt' => now(),                 // ✅ REQUIRED
+                'currentuser' => Auth::user()->name ?? 'System', // ✅ REQUIRED
             ]
         )->setPaper('a4', 'landscape');
 

@@ -204,7 +204,7 @@ const numberFormat = (value: Nullable<number | string>) => {
 }
 
 const dateFormat = (value: Nullable<string>) => {
-  if (!value) return 'â€”'
+  if (!value) return '—'
 
   try {
     return new Date(value).toLocaleDateString('en-GB', {
@@ -218,7 +218,7 @@ const dateFormat = (value: Nullable<string>) => {
 }
 
 const titleCase = (value: Nullable<string>) => {
-  if (!value) return 'â€”'
+  if (!value) return '—'
 
   return String(value)
     .replace(/[_-]/g, ' ')
@@ -525,18 +525,18 @@ const monthlyBarWidth = (value: Nullable<number | string>) => {
               <tbody class="divide-y divide-slate-800 bg-slate-900/50">
                 <tr v-for="item in rows" :key="item.id" class="align-top transition hover:bg-slate-800/60">
                   <td class="px-4 py-3">
-                    <div class="font-semibold text-white">{{ item.asset_code ?? 'â€”' }}</div>
+                    <div class="font-semibold text-white">{{ item.asset_code ?? '—' }}</div>
                     <div class="mt-0.5 max-w-xs truncate text-xs text-slate-400">{{ item.asset_name ?? 'Unknown asset' }}</div>
                     <div class="mt-1 max-w-xs truncate text-xs text-slate-500">{{ item.fault_description ?? item.description ?? 'No description' }}</div>
                   </td>
 
                   <td class="px-4 py-3">
-                    <div class="text-slate-200">{{ item.unit_name ?? 'â€”' }}</div>
+                    <div class="text-slate-200">{{ item.unit_name ?? '—' }}</div>
                     <div class="mt-0.5 text-xs text-slate-500">{{ item.locationname ?? 'No location' }}</div>
                   </td>
 
                   <td class="px-4 py-3 text-slate-300">
-                    {{ item.provider_name ?? 'â€”' }}
+                    {{ item.provider_name ?? '—' }}
                   </td>
 
                   <td class="px-4 py-3">

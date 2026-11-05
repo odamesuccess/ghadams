@@ -106,8 +106,8 @@ const submit = (): void => {
                                 :key="user.id"
                                 :value="String(user.id)"
                             >
-                                {{ user.name }} â€” {{ user.email }}
-                                â€”
+                                {{ user.name }} — {{ user.email }}
+                                —
                                 {{
                                     user.two_factor_enabled
                                         ? '2FA Confirmed'

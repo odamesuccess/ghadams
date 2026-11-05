@@ -266,7 +266,7 @@ const uploadInvoice = (event: Event, request: any) => {
 }
 
 const fmt = (v?: string) => {
-  if (!v) return 'â€”'
+  if (!v) return '—'
 
   try {
     return new Date(v).toLocaleString('en-GB', {
@@ -282,7 +282,7 @@ const fmt = (v?: string) => {
 }
 
 const money = (value?: string | number | null) => {
-  if (value === null || value === undefined || value === '') return 'â€”'
+  if (value === null || value === undefined || value === '') return '—'
 
   const amount = Number(value)
 
@@ -382,7 +382,7 @@ const paymentClass = (status?: string | null) => {
                   class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[11px] font-semibold"
                   :class="assetSearchLoading ? 'text-blue-300' : 'text-slate-500'"
                 >
-                  {{ assetSearchLoading ? 'Searchingâ€¦' : (selectedAsset ? 'Selected' : 'Type to search') }}
+                  {{ assetSearchLoading ? 'Searching…' : (selectedAsset ? 'Selected' : 'Type to search') }}
                 </div>
 
                 <div
@@ -393,7 +393,7 @@ const paymentClass = (status?: string | null) => {
                     v-if="assetSearchLoading && !assetSearchResults.length"
                     class="px-3 py-3 text-sm text-slate-400"
                   >
-                    Searching assetsâ€¦
+                    Searching assets…
                   </div>
 
                   <div
@@ -426,7 +426,7 @@ const paymentClass = (status?: string | null) => {
                         >
                           {{ asset.unit_name ?? 'No unit' }}
                           <span v-if="asset.location_name">
-                            Â· {{ asset.location_name }}
+                            · {{ asset.location_name }}
                           </span>
                         </div>
                       </div>
@@ -460,7 +460,7 @@ const paymentClass = (status?: string | null) => {
                 v-else-if="selectedAsset"
                 class="truncate text-[11px] text-emerald-400"
               >
-                Selected: {{ selectedAsset.asset_code }} Â·
+                Selected: {{ selectedAsset.asset_code }} ·
                 {{ selectedAsset.asset_name ?? 'Unnamed Asset' }}
               </p>
             </div>
@@ -675,7 +675,7 @@ const paymentClass = (status?: string | null) => {
                   </td>
 
                   <td class="whitespace-nowrap px-4 py-3 font-medium text-white">
-                    {{ r.asset?.asset_code ?? 'â€”' }}
+                    {{ r.asset?.asset_code ?? '—' }}
                   </td>
 
                   <td class="max-w-md truncate px-4 py-3 text-slate-300">
@@ -701,7 +701,7 @@ const paymentClass = (status?: string | null) => {
                   </td>
 
                   <td class="whitespace-nowrap px-4 py-3 text-slate-300">
-                    {{ r.maintenance_provider?.providername ?? 'â€”' }}
+                    {{ r.maintenance_provider?.providername ?? '—' }}
                   </td>
 
                   <td class="min-w-[210px] whitespace-nowrap px-4 py-3">

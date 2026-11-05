@@ -19,7 +19,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  /* ðŸŽ¯ SIDEBAR FONT SIZE TOKEN */
+  /* 🎯 SIDEBAR FONT SIZE TOKEN */
   --sidebar-font-size: 0.875rem; /* 14px default */
 
   --color-background: var(--background);
@@ -89,7 +89,7 @@
 }
 
 /* =====================================================
-   DARK MODE (ðŸ”¥ PURE BLACK INPUTS)
+   DARK MODE (🔥 PURE BLACK INPUTS)
 ===================================================== */
 .dark {
   --background: hsl(225 35% 6%);
@@ -109,7 +109,7 @@
   --destructive: hsl(0 84% 60%);
   --destructive-foreground: hsl(0 0% 98%);
 
-  /* ðŸ”¥ HARD OVERRIDES */
+  /* 🔥 HARD OVERRIDES */
   --input: hsl(0 0% 0%);
   --border: hsl(225 20% 18%);
   --ring: hsl(217 91% 60%);
@@ -156,7 +156,7 @@
   }
 
   /* ===============================
-     ðŸ”¥ GLOBAL BLACK INPUTS
+     🔥 GLOBAL BLACK INPUTS
   =============================== */
   input,
   select,
@@ -208,7 +208,7 @@
 
 
 /* =========================================================
-   GHANADAMS UNIFORM APPLICATION THEME â€” 2026-09
+   GHANADAMS UNIFORM APPLICATION THEME — 2026-09
    Applied centrally through .ghadams-app-content.
 ========================================================= */
 .ghadams-app-content {

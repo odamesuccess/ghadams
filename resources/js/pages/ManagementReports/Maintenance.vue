@@ -123,7 +123,7 @@ const money=(v:number|string|null|undefined)=>
     .format(Number(v??0))
 
 const date=(v:string|null|undefined)=>
-  v?new Date(`${v}T00:00:00`).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'â€”'
+  v?new Date(`${v}T00:00:00`).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—'
 
 const statusClass=(v?:string|null)=>{
   const s=(v??'').toLowerCase()
@@ -177,10 +177,10 @@ const maxTrend=computed(()=>Math.max(1,...props.monthlyTrend.map(r=>Number(r.com
         </select>
 
         <select v-if="filters.period==='quarterly'" v-model="filters.quarter" class="gh-field">
-          <option :value="1">Q1 (Janâ€“Mar)</option>
-          <option :value="2">Q2 (Aprâ€“Jun)</option>
-          <option :value="3">Q3 (Julâ€“Sep)</option>
-          <option :value="4">Q4 (Octâ€“Dec)</option>
+          <option :value="1">Q1 (Jan–Mar)</option>
+          <option :value="2">Q2 (Apr–Jun)</option>
+          <option :value="3">Q3 (Jul–Sep)</option>
+          <option :value="4">Q4 (Oct–Dec)</option>
         </select>
 
         <select v-model="filters.unit_id" class="gh-field">
@@ -257,12 +257,12 @@ const maxTrend=computed(()=>Math.max(1,...props.monthlyTrend.map(r=>Number(r.com
             </thead>
             <tbody>
               <tr v-for="job in jobs.data" :key="job.id">
-                <td><strong>{{ job.asset_code ?? 'â€”' }}</strong><small>{{ job.asset_name ?? '' }}</small></td>
-                <td><strong>{{ job.unit_name ?? 'â€”' }}</strong><small>{{ job.locationname ?? '' }}</small></td>
-                <td>{{ job.provider_name ?? 'â€”' }}</td>
-                <td>{{ job.fault_description ?? 'â€”' }}</td>
-                <td><span :class="priorityClass(job.priority)">{{ job.priority ?? 'â€”' }}</span></td>
-                <td><span :class="statusClass(job.status)">{{ (job.status ?? 'â€”').replaceAll('_',' ') }}</span></td>
+                <td><strong>{{ job.asset_code ?? '—' }}</strong><small>{{ job.asset_name ?? '' }}</small></td>
+                <td><strong>{{ job.unit_name ?? '—' }}</strong><small>{{ job.locationname ?? '' }}</small></td>
+                <td>{{ job.provider_name ?? '—' }}</td>
+                <td>{{ job.fault_description ?? '—' }}</td>
+                <td><span :class="priorityClass(job.priority)">{{ job.priority ?? '—' }}</span></td>
+                <td><span :class="statusClass(job.status)">{{ (job.status ?? '—').replaceAll('_',' ') }}</span></td>
                 <td>{{ date(job.actual_completion_date ?? job.scheduled_date) }}</td>
                 <td><span class="gh-badge" :class="job.payment_status==='paid'?'gh-badge-success':'gh-badge-warning'">{{ job.payment_status ?? 'Not Ready' }}</span></td>
                 <td class="font-semibold">{{ money(job.final_cost) }}</td>
@@ -273,7 +273,7 @@ const maxTrend=computed(()=>Math.max(1,...props.monthlyTrend.map(r=>Number(r.com
         </div>
 
         <div class="gh-pagination">
-          <span>Showing {{ jobs.from ?? 0 }}â€“{{ jobs.to ?? 0 }} of {{ jobs.total }}</span>
+          <span>Showing {{ jobs.from ?? 0 }}–{{ jobs.to ?? 0 }} of {{ jobs.total }}</span>
           <div>
             <button class="gh-btn gh-btn-secondary" :disabled="jobs.current_page<=1" @click="goPage(jobs.current_page-1)">Previous</button>
             <span class="gh-page-number">{{ jobs.current_page }} / {{ jobs.last_page }}</span>

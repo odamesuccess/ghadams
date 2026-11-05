@@ -115,7 +115,7 @@ const money=(v:number|string|null|undefined)=>
     .format(Number(v ?? 0))
 
 const date=(v:string|null|undefined)=>
-  v ? new Date(`${v}T00:00:00`).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : 'â€”'
+  v ? new Date(`${v}T00:00:00`).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'
 
 const statusClass=(status:string)=>({
   active:'gh-badge gh-badge-success',
@@ -161,10 +161,10 @@ const maxTrend = computed(() =>
         </select>
 
         <select v-if="filters.period==='quarterly'" v-model="filters.quarter" class="gh-field">
-          <option :value="1">Q1 (Janâ€“Mar)</option>
-          <option :value="2">Q2 (Aprâ€“Jun)</option>
-          <option :value="3">Q3 (Julâ€“Sep)</option>
-          <option :value="4">Q4 (Octâ€“Dec)</option>
+          <option :value="1">Q1 (Jan–Mar)</option>
+          <option :value="2">Q2 (Apr–Jun)</option>
+          <option :value="3">Q3 (Jul–Sep)</option>
+          <option :value="4">Q4 (Oct–Dec)</option>
         </select>
 
         <select v-model="filters.unit_id" class="gh-field">
@@ -227,9 +227,9 @@ const maxTrend = computed(() =>
             <tbody>
               <tr v-for="asset in assets.data" :key="asset.id">
                 <td class="font-semibold">{{ asset.asset_code }}</td>
-                <td>{{ asset.asset_name?.assetname ?? 'â€”' }}</td>
-                <td><strong>{{ asset.unit?.name ?? 'â€”' }}</strong><small>{{ asset.unit?.locationname ?? '' }}</small></td>
-                <td>{{ asset.supplier?.suppliername ?? 'â€”' }}</td>
+                <td>{{ asset.asset_name?.assetname ?? '—' }}</td>
+                <td><strong>{{ asset.unit?.name ?? '—' }}</strong><small>{{ asset.unit?.locationname ?? '' }}</small></td>
+                <td>{{ asset.supplier?.suppliername ?? '—' }}</td>
                 <td>{{ date(asset.purchase_date) }}</td>
                 <td class="font-semibold">{{ money(asset.purchase_cost) }}</td>
                 <td><span :class="statusClass(asset.status)">{{ asset.status.replaceAll('_',' ') }}</span></td>
@@ -240,7 +240,7 @@ const maxTrend = computed(() =>
         </div>
 
         <div class="gh-pagination">
-          <span>Showing {{ assets.from ?? 0 }}â€“{{ assets.to ?? 0 }} of {{ assets.total }}</span>
+          <span>Showing {{ assets.from ?? 0 }}–{{ assets.to ?? 0 }} of {{ assets.total }}</span>
           <div>
             <button class="gh-btn gh-btn-secondary" :disabled="assets.current_page<=1" @click="goPage(assets.current_page-1)">Previous</button>
             <span class="gh-page-number">{{ assets.current_page }} / {{ assets.last_page }}</span>
